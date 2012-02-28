@@ -41,6 +41,8 @@ rev4dir = $(datadir)/usrp/rev4
 dist_rev2_DATA = std_inband.rbf
 dist_rev4_DATA = std_inband.rbf
 
+SUBDIRS = sigproc
+
 EXTRA_DIST = \
 	README \
 	README.Talgorithm
