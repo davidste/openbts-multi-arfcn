@@ -127,6 +127,9 @@ PKG_CHECK_MODULES(ORTP, ortp)
 # Defines LIBUSB_TRANSFER_CANCELLED, LIBUSB_TRANSFER_COMPLETED, LIBUSB_SUCCESS, LIBUSB_ERROR_*
 PKG_CHECK_MODULES(LIBUSB, libusb-1.0)
 
+# Defines FFTW_CFLAGS, FFTW_INCLUDEDIR, and FFTW_LIBS
+PKG_CHECK_MODULES(FFTW, fftw3f)
+
 # Prepends -lreadline to LIBS and defines HAVE_LIBREADLINE in config.h
 #AC_CHECK_LIB(readline, readline)
 
@@ -152,7 +155,10 @@ AC_CONFIG_FILES([\
 ]) 
 
 AS_IF([test "x$with_usrp1" = "xyes" -o "x$with_uhd" = "xyes"],
-	    [AC_CONFIG_FILES(Transceiver52M/Makefile)
+    [AC_CONFIG_FILES([\
+        Transceiver52M/Makefile \
+        Transceiver52M/sigproc/Makefile \
+    ])
 ])
 
 AC_OUTPUT
