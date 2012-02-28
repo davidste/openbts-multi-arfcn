@@ -12,7 +12,8 @@
 
 */
 
-
+#ifndef _RADIOINTEFACE_H_
+#define _RADIOINTEFACE_H_
 
 #include "sigProcLib.h"  
 #include "GSMCommon.h"
@@ -155,3 +156,5 @@ protected:
 
 /** synchronization thread loop */
 void *AlignRadioServiceLoopAdapter(RadioInterface*);
+
+#endif /* _RADIOINTEFACE_H_ */
