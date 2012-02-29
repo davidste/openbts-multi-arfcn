@@ -57,7 +57,7 @@ class RadioDevice {
 	@param RSSI The received signal strength of the read result
 	@return The number of samples actually read
   */
-  virtual int readSamples(short *buf, int len, bool *overrun, 
+  virtual int readSamples(float *buf, int len, bool *overrun, 
 		   TIMESTAMP timestamp = 0xffffffff,
 		   bool *underrun = 0,
 		   unsigned *RSSI = 0)=0;
@@ -70,7 +70,7 @@ class RadioDevice {
         @param isControl Set if data is a control packet, e.g. a ping command
         @return The number of samples actually written
   */
-  virtual int writeSamples(short *buf, int len, bool *underrun, 
+  virtual int writeSamples(float *buf, int len, bool *underrun, 
 		    TIMESTAMP timestamp,
 		    bool isControl=false)=0;
  
