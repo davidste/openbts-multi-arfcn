@@ -127,7 +127,7 @@ public:
 	};
 
 private:
-	uint32_t *data;
+	uint64_t *data;
 	size_t buf_len;
 
 	double clk_rt;
@@ -158,10 +158,10 @@ public:
 	void setPriority();
 	enum busType getBus() { return bus; }
 
-	int readSamples(short *buf, int len, bool *overrun, 
+	int readSamples(float *buf, int len, bool *overrun, 
 			TIMESTAMP timestamp, bool *underrun, unsigned *RSSI);
 
-	int writeSamples(short *buf, int len, bool *underrun, 
+	int writeSamples(float *buf, int len, bool *underrun, 
 			 TIMESTAMP timestamp, bool isControl);
 
 	bool updateAlignment(TIMESTAMP timestamp);
@@ -172,8 +172,8 @@ public:
 	inline TIMESTAMP initialWriteTimestamp() { return 0; }
 	inline TIMESTAMP initialReadTimestamp() { return 0; }
 
-	inline double fullScaleInputValue() { return 32000 * tx_ampl; }
-	inline double fullScaleOutputValue() { return 32000; }
+	inline double fullScaleInputValue() { return 1.0f * tx_ampl; }
+	inline double fullScaleOutputValue() { return 1.0f; }
 
 	double setRxGain(double db);
 	double getRxGain(void) { return rx_gain; }
@@ -355,6 +355,7 @@ double uhd_device::set_rates(double rate)
 
 	if (actual_rt != rate) {
 		LOG(ALERT) << "Actual sample rate differs from desired rate";
+		LOG(ALERT) << actual_rt << "Hz";
 		return -1.0;
 	}
 	if (usrp_dev->get_rx_rate() != actual_rt) {
@@ -462,7 +463,7 @@ bool uhd_device::open()
 		return false;
 
 	// Create receive buffer
-	size_t buf_len = smpl_buf_sz / sizeof(uint32_t);
+	size_t buf_len = smpl_buf_sz / sizeof(uint64_t);
 	rx_smpl_buf = new smpl_buf(buf_len, actual_smpl_rt);
 
 	// Set receive chain sample offset 
@@ -481,7 +482,7 @@ bool uhd_device::flush_recv(size_t num_pkts)
 {
 	uhd::rx_metadata_t md;
 	size_t num_smpls;
-	uint32_t buff[rx_spp];
+	uint64_t buff[rx_spp];
 	float timeout;
 
 	// Use .01 sec instead of the default .1 sec
@@ -492,7 +493,7 @@ bool uhd_device::flush_recv(size_t num_pkts)
 					buff,
 					rx_spp,
 					md,
-					uhd::io_type_t::COMPLEX_INT16,
+					uhd::io_type_t::COMPLEX_FLOAT32,
 					uhd::device::RECV_MODE_ONE_PACKET,
 					timeout);
 
@@ -607,13 +608,13 @@ int uhd_device::check_rx_md_err(uhd::rx_metadata_t &md, ssize_t num_smpls)
 	return 0;
 }
 
-int uhd_device::readSamples(short *buf, int len, bool *overrun,
+int uhd_device::readSamples(float *buf, int len, bool *overrun,
 			TIMESTAMP timestamp, bool *underrun, unsigned *RSSI)
 {
 	ssize_t rc;
 	uhd::time_spec_t ts;
 	uhd::rx_metadata_t metadata;
-	uint32_t pkt_buf[rx_spp];
+	uint64_t pkt_buf[rx_spp];
 
 	if (skip_rx)
 		return 0;
@@ -638,7 +639,7 @@ int uhd_device::readSamples(short *buf, int len, bool *overrun,
 					(void*)pkt_buf,
 					rx_spp,
 					metadata,
-					uhd::io_type_t::COMPLEX_INT16,
+					uhd::io_type_t::COMPLEX_FLOAT32,
 					uhd::device::RECV_MODE_ONE_PACKET);
 
 		rx_pkt_cnt++;
@@ -684,7 +685,7 @@ int uhd_device::readSamples(short *buf, int len, bool *overrun,
 	return len;
 }
 
-int uhd_device::writeSamples(short *buf, int len, bool *underrun,
+int uhd_device::writeSamples(float *buf, int len, bool *underrun,
 			unsigned long long timestamp,bool isControl)
 {
 	uhd::tx_metadata_t metadata;
@@ -721,7 +722,7 @@ int uhd_device::writeSamples(short *buf, int len, bool *underrun,
 	size_t num_smpls = usrp_dev->get_device()->send(buf,
 					len,
 					metadata,
-					uhd::io_type_t::COMPLEX_INT16,
+					uhd::io_type_t::COMPLEX_FLOAT32,
 					uhd::device::SEND_MODE_FULL_BUFF);
 
 	if (num_smpls != (unsigned) len) {
@@ -847,7 +848,7 @@ smpl_buf::smpl_buf(size_t len, double rate)
 	: buf_len(len), clk_rt(rate),
 	  time_start(0), time_end(0), data_start(0), data_end(0)
 {
-	data = new uint32_t[len];
+	data = new uint64_t[len];
 }
 
 smpl_buf::~smpl_buf()
@@ -872,7 +873,7 @@ ssize_t smpl_buf::avail_smpls(uhd::time_spec_t timespec) const
 
 ssize_t smpl_buf::read(void *buf, size_t len, TIMESTAMP timestamp)
 {
-	int type_sz = 2 * sizeof(short);
+	int type_sz = 2 * sizeof(float);
 
 	// Check for valid read
 	if (timestamp < time_start)
@@ -918,7 +919,7 @@ ssize_t smpl_buf::read(void *buf, size_t len, uhd::time_spec_t ts)
 
 ssize_t smpl_buf::write(void *buf, size_t len, TIMESTAMP timestamp)
 {
-	int type_sz = 2 * sizeof(short);
+	int type_sz = 2 * sizeof(float);
 
 	// Check for valid write
 	if ((len == 0) || (len >= buf_len))
