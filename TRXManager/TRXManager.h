@@ -59,7 +59,7 @@ class TransceiverManager {
 	private:
 
 	/// the ARFCN mananger under this TRX
-	ARFCNManager* mARFCN;
+	ARFCNManager **mARFCN;
 
 	/// set true when the first CLOCK packet is received
 	volatile bool mHaveClock;
@@ -67,7 +67,8 @@ class TransceiverManager {
 	UDPSocket mClockSocket;		
 	/// a thread to monitor the global clock socket
 	Thread mClockThread;	
-
+	/// number of ARFCN's
+	int mNumARFCN;
 
 	public:
 
@@ -76,11 +77,12 @@ class TransceiverManager {
 		@param wTRXAddress IP address of the transceiver.
 		@param wBasePort The base port for the interface, as defined in README.TRX.
 	*/
-	TransceiverManager(const char* wTRXAddress, int wBasePort);
+	TransceiverManager(const char* wTRXAddress, int wBasePort, int wNumARFCN);
+	~TransceiverManager();
 
 	/**@name Accessors. */
 	//@{
-	ARFCNManager* ARFCN() { return mARFCN; }
+	ARFCNManager* ARFCN(int num) { return mARFCN[num]; }
 	//@}
 
 	/** Start the clock management thread and all ARFCN managers. */

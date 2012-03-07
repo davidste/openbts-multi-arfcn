@@ -281,22 +281,21 @@ unsigned GSMConfig::shrinkT3122()
 
 
 
-void GSMConfig::createCombination0(TransceiverManager& TRX, unsigned TN)
+void GSMConfig::createCombination0(TransceiverManager& TRX, unsigned TN, unsigned ARFCN)
 {
 	// This channel is a dummy burst generator.
 	// This should not be applied to C0T0.
 	LOG_ASSERT(TN!=0);
 	LOG(NOTICE) << "Configuring dummy filling on C0T " << TN;
-	ARFCNManager *radio = TRX.ARFCN();
+	ARFCNManager *radio = TRX.ARFCN(ARFCN);
 	radio->setSlot(TN,0);
 }
 
 
-void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned TN)
+void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned TN, unsigned ARFCN)
 {
-	LOG_ASSERT(TN!=0);
-	LOG(NOTICE) << "Configuring combination I on C0T" << TN;
-	ARFCNManager *radio = TRX.ARFCN();
+	LOG(ERR) << "Configuring combination I on TN " << TN << " ARFCN " << ARFCN;
+	ARFCNManager *radio = TRX.ARFCN(ARFCN);
 	radio->setSlot(TN,1);
 	TCHFACCHLogicalChannel* chan = new TCHFACCHLogicalChannel(TN,gTCHF_T[TN]);
 	chan->downstream(radio);
@@ -308,11 +307,11 @@ void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned TN)
 }
 
 
-void GSMConfig::createCombinationVII(TransceiverManager& TRX, unsigned TN)
+void GSMConfig::createCombinationVII(TransceiverManager& TRX, unsigned TN, unsigned ARFCN)
 {
 	LOG_ASSERT(TN!=0);
 	LOG(NOTICE) << "Configuring combination VII on C0T" << TN;
-	ARFCNManager *radio = TRX.ARFCN();
+	ARFCNManager *radio = TRX.ARFCN(ARFCN);
 	radio->setSlot(TN,7);
 	for (int i=0; i<8; i++) {
 		SDCCHLogicalChannel* chan = new SDCCHLogicalChannel(TN,gSDCCH8[i]);

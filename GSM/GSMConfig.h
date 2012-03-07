@@ -266,11 +266,11 @@ class GSMConfig {
 	/**@name Methods to create channel combinations. */
 	//@{
 	/** Combination 0 is a idle slot, as opposed to a non-transmitting one. */
-	void createCombination0(TransceiverManager &TRX, unsigned TN);
+	void createCombination0(TransceiverManager &TRX, unsigned TN, unsigned ARFCN);
 	/** Combination I is full rate traffic. */
-	void createCombinationI(TransceiverManager &TRX, unsigned TN);
+	void createCombinationI(TransceiverManager &TRX, unsigned TN, unsigned ARFCN);
 	/** Combination VII is 8 SDCCHs. */
-	void createCombinationVII(TransceiverManager &TRX, unsigned TN);
+	void createCombinationVII(TransceiverManager &TRX, unsigned TN, unsigned ARFCN);
 	//@}
 
 	/** Return number of seconds since starting. */
