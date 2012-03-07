@@ -91,7 +91,7 @@ SIP::SIPInterface gSIPInterface;
 GSMConfig gBTS;
 
 // Our interface to the software-defined radio.
-TransceiverManager gTRX(gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"));
+TransceiverManager gTRX(gConfig.getStr("TRX.IP").c_str(), gConfig.getNum("TRX.Port"), 3);
 
 // Subscriber registry
 SubscriberRegistry gSubscriberRegistry;
@@ -175,23 +175,27 @@ int main(int argc, char *argv[])
 
 	// Set up the interface to the radio.
 	// Get a handle to the C0 transceiver interface.
-	ARFCNManager* C0radio = gTRX.ARFCN();
-
-	// Tuning.
-	// Make sure its off for tuning.
-	C0radio->powerOff();
-	// Get the ARFCN list.
 	unsigned C0 = gConfig.getNum("GSM.Radio.C0");
-	// Tune the radio.
+	ARFCNManager* C0radio = gTRX.ARFCN(0);
+	ARFCNManager* radio1 = gTRX.ARFCN(1);
+	ARFCNManager* radio2 = gTRX.ARFCN(2);
+
+	C0radio->powerOff();
+	radio1->powerOff();
+	radio2->powerOff();
+
 	LOG(INFO) << "tuning TRX to ARFCN " << C0;
-	ARFCNManager* radio = gTRX.ARFCN();
-	radio->tune(C0);
+	C0radio->tune(C0);
 
 	// Set TSC same as BCC everywhere.
 	C0radio->setTSC(gBTS.BCC());
+	radio1->setTSC(gBTS.BCC());
+	radio2->setTSC(gBTS.BCC());
 
 	// Set maximum expected delay spread.
 	C0radio->setMaxDelay(gConfig.getNum("GSM.Radio.MaxExpectedDelaySpread"));
+	radio1->setMaxDelay(gConfig.getNum("GSM.Radio.MaxExpectedDelaySpread"));
+	radio2->setMaxDelay(gConfig.getNum("GSM.Radio.MaxExpectedDelaySpread"));
 
 	// Set Receiver Gain
 	C0radio->setRxGain(gConfig.getNum("GSM.Radio.RxGain"));
@@ -199,6 +203,15 @@ int main(int argc, char *argv[])
 	// Turn on and power up.
 	C0radio->powerOn();
 	C0radio->setPower(gConfig.getNum("GSM.Radio.PowerManager.MinAttenDB"));
+
+	// C0 will 'lock down' the radio interface to prevent
+	// retuning of the RF section so we need to power up
+	// C0 before soft tuning (setting internal variables)
+	// for other channels.
+	radio1->tune(C0 - 2);
+	radio2->tune(C0 + 2);
+	radio1->powerOn();
+	radio2->powerOn();
 
 	//
 	// Create a C-V channel set on C0T0.
@@ -263,31 +276,45 @@ int main(int argc, char *argv[])
 	if (gConfig.defines("GSM.Channels.C1sFirst")) {
 		// Create C-I slots.
 		for (int i=0; i<gConfig.getNum("GSM.Channels.NumC1s"); i++) {
-			gBTS.createCombinationI(gTRX,sCount);
+			gBTS.createCombinationI(gTRX,sCount,0);
 			sCount++;
 		}
 	}
 
 	// Create C-VII slots.
 	for (int i=0; i<gConfig.getNum("GSM.Channels.NumC7s"); i++) {
-		gBTS.createCombinationVII(gTRX,sCount);
+		gBTS.createCombinationVII(gTRX,sCount,0);
 		sCount++;
 	}
 
 	if (!gConfig.defines("GSM.Channels.C1sFirst")) {
 		// Create C-I slots.
 		for (int i=0; i<gConfig.getNum("GSM.Channels.NumC1s"); i++) {
-			gBTS.createCombinationI(gTRX,sCount);
+			gBTS.createCombinationI(gTRX,sCount,0);
 			sCount++;
 		}
 	}
 
-
 	// Set up idle filling on C0 as needed.
 	while (sCount<8) {
-		gBTS.createCombination0(gTRX,sCount);
+		gBTS.createCombination0(gTRX,sCount, 0);
 		sCount++;
 	}
+
+	for (int n=1; n<3; n++) {
+		// Create all C-I slots on second ARFCN
+		sCount = 0;
+        for (int i=0; i<8; i++) {
+			gBTS.createCombinationI(gTRX,i,n);
+			sCount++;
+		}
+    
+		// Set up idle filling on C0 as needed.
+		while (sCount<8) {
+			gBTS.createCombination0(gTRX,sCount,n);
+			sCount++;
+		}
+    }
 
 	/*
 		Note: The number of different paging subchannels on       
