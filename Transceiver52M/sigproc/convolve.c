@@ -27,40 +27,6 @@
 
 #include "convolve.h"
 
-/* Generic multiply and accumulate complex-real */
-static inline void mac_real(cmplx *x, cmplx *h, cmplx *y)
-{
-	y->real += x->real * h->real;
-	y->imag += x->imag * h->real;
-}
-
-/* Generic multiply and accumulate complex-complex */
-static inline void mac_cmplx(cmplx *x, cmplx *h, cmplx *y)
-{
-	y->real += x->real * h->real - x->imag * h->imag;
-	y->imag += x->real * h->imag + x->imag * h->real;
-}
-
-/* Generic vector complex-real multiply and accumulate */
-static inline void mac_real_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		mac_real(&x[i], &h[i], y);
-	}
-}
-
-/* Generic vector complex-complex multiply and accumulate */
-static inline void mac_cmplx_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
-{
-	int i;
-
-	for (i = 0; i < len; i++) {
-		mac_cmplx(&x[i], &h[i], y);
-	}
-}
-
 /*! \brief Convolve two complex vectors 
  *  \param[in] in_vec Complex input signal
  *  \param[in] h_vec Complex filter taps (stored in reverse order)
