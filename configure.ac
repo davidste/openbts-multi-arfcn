@@ -132,6 +132,30 @@ PKG_CHECK_MODULES(FFTW, fftw3f)
 AC_DEFINE(MULTICHAN, 1, Define to 1 for multi-arfcn support)
 AM_CONDITIONAL(MULTICHAN, [true])
 
+# Check for SSE3 
+NO_SSE3_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS -msse3"
+
+AC_MSG_CHECKING(for SSE3)
+AC_LINK_IFELSE([
+    AC_LANG_PROGRAM([[
+#include <pmmintrin.h>
+__m128 testfunc(float *a, float *b) {
+    return _mm_hadd_ps(_mm_loadu_ps(a), _mm_loadu_ps(b));
+}
+    ]])
+], [has_sse3=yes], [has_sse3=no])
+
+AC_MSG_RESULT($has_sse3)
+
+if test "$has_sse3" = yes; then
+    AC_DEFINE(USE_SSE3, 1, [Enable SSE3 support])
+else
+    CFLAGS="$NO_SSE_CFLAGS"
+fi
+
+AM_CONDITIONAL(USE_SSE3, [test "x$has_sse3" = "xyes"])
+
 # Prepends -lreadline to LIBS and defines HAVE_LIBREADLINE in config.h
 AC_CHECK_LIB(readline, readline)
 

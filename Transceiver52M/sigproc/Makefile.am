@@ -27,8 +27,13 @@ noinst_LTLIBRARIES = libsigproc.la
 
 libsigproc_la_SOURCES = \
 	sigvec.c \
-	convolve.c \
 	fft.c
+
+if USE_SSE3
+libsigproc_la_SOURCES += convolve_sse.c
+else
+libsigproc_la_SOURCES += convolve.c
+endif
 
 noinst_HEADERS = \
 	sigproc.h \
