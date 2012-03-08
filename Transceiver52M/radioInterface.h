@@ -1,5 +1,5 @@
 /*
-* Copyright 2008 Free Software Foundation, Inc.
+* Copyright 2008, 2012 Free Software Foundation, Inc.
 *
 * This software is distributed under multiple licenses; see the COPYING file in the main directory for licensing information for this specific distribuion.
 *
@@ -23,9 +23,11 @@
 #include "radioClock.h"
 
 /** samples per GSM symbol */
-#define SAMPSPERSYM 1 
+#define SAMPSPERSYM 1
 #define INCHUNK    (625)
 #define OUTCHUNK   (625)
+#define CHAN_M      5
+
 
 /** class to interface the transceiver with the USRP */
 class RadioInterface {
@@ -34,15 +36,17 @@ private:
 
   Thread mAlignRadioServiceLoopThread;	      ///< thread that synchronizes transmit and receive sections
 
-  VectorFIFO  mReceiveFIFO;		      ///< FIFO that holds receive  bursts
+  VectorFIFO mReceiveFIFO[CHAN_M];	      ///< FIFO that holds receive  bursts
 
   RadioDevice *mRadio;			      ///< the USRP object
  
-  float *sendBuffer;
+  float *sendBuffer[CHAN_M];
   unsigned sendCursor;
 
-  float *rcvBuffer;
+  float *rcvBuffer[CHAN_M];
   unsigned rcvCursor;
+
+  bool chanActive[CHAN_M];
  
   bool underrun;			      ///< indicates writes to USRP are too slow
   bool overrun;				      ///< indicates reads from USRP are too slow
@@ -64,6 +68,9 @@ private:
   int mNumARFCNs;
   signalVector *finalVec, *finalVec9;
 
+  /** initialize I/O internals */
+  bool init();
+
   /** format samples to USRP */ 
   int radioifyVector(signalVector &wVector,
                      float *floatVector,
@@ -71,7 +78,7 @@ private:
                      bool zero);
 
   /** format samples from USRP */
-  int unRadioifyVector(float *floatVector, signalVector &wVector);
+  int unRadioifyVector(float *floatVector, int offset, signalVector &wVector);
 
   /** push GSM bursts into the transmit buffer */
   void pushBuffer(void);
@@ -79,10 +86,17 @@ private:
   /** pull GSM bursts from the receive buffer */
   void pullBuffer(void);
 
+  /** load receive vectors into FIFO's */
+  void loadVectors(unsigned tN, int samplesPerBurst, int index, GSM::Time rxClock);
+
 public:
 
   /** start the interface */
-  void start();
+  bool start();
+  bool started() { return mOn; };
+
+  /** shutdown interface */
+  void close();
 
   /** constructor */
   RadioInterface(RadioDevice* wRadio = NULL,
@@ -105,7 +119,7 @@ public:
   void attach(RadioDevice *wRadio, int wRadioOversampling);
 
   /** return the receive FIFO */
-  VectorFIFO* receiveFIFO() { return &mReceiveFIFO;}
+  VectorFIFO* receiveFIFO(int num) { return &mReceiveFIFO[num];}
 
   /** return the basestation clock */
   RadioClock* getClock(void) { return &mClock;};
@@ -123,7 +137,7 @@ public:
   double getRxGain(void);
 
   /** drive transmission of GSM bursts */
-  void driveTransmitRadio(signalVector &radioBurst, bool zeroBurst);
+  void driveTransmitRadio(signalVector **radioBurst, bool *zeroBurst);
 
   /** drive reception of GSM bursts */
   void driveReceiveRadio();
@@ -141,6 +155,12 @@ public:
 
   /** get transport bus type of attached device */ 
   enum RadioDevice::busType getBus() { return mRadio->getBus(); }
+
+  /** activate a channel */
+  bool activateChan(int num);
+
+  /** deactivate a channel */
+  bool deactivateChan(int num);
 
 protected:
 
