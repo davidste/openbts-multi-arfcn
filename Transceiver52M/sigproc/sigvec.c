@@ -23,12 +23,21 @@
  */
 
 #include <stdlib.h>
+#include <malloc.h>
 #include <string.h>
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
 
 #include "sigvec.h"
+
+/*
+ * Memory alignment size if requested. SSE aligned loads require memory
+ * aligned at 16 byte boundaries. This is only relevant for certain
+ * vectors such as filter taps, which will always be accessed from a
+ * known, aligned location - such as 0.
+ */
+#define ALIGN_SZ		16
 
 static void cxvec_init(struct cxvec *vec, int len, int buf_len,
 		       int start, cmplx *buf, int flags)
@@ -61,8 +70,12 @@ struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
 
 	vec = (struct cxvec *) malloc(sizeof(struct cxvec));
 
-	if (!buf)
-		buf = (cmplx *) malloc(sizeof(cmplx) * len); 
+	if (!buf) {
+		if (flags & CXVEC_FLG_MEM_ALIGN)
+			buf = (cmplx *) memalign(ALIGN_SZ, sizeof(cmplx) * len);
+		else
+			buf = (cmplx *) malloc(sizeof(cmplx) * len);
+	}
 
 	cxvec_init(vec, len - start, len, start, buf, flags);
 
