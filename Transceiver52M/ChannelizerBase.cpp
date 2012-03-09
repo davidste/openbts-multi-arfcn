@@ -63,9 +63,7 @@ bool ChannelizerBase::init_chan_filt(struct cxvec **fill_prot_filt)
 	/* 
 	 * Allocate 'M' partition filters and the temporary prototype
 	 * filter. Coefficients are real only and must be 16-byte memory
-	 * aligned on 64-bit systems for SSE usage.
-	 *
-	 * FIXME check memory alignment requirements for non-64-bit systems.
+	 * aligned for SSE usage.
 	 */
 	int flags = CXVEC_FLG_REAL_ONLY | CXVEC_FLG_MEM_ALIGN;
 
