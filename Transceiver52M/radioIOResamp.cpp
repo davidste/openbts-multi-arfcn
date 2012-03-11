@@ -34,15 +34,10 @@
 #endif
 
 /* Resampling parameters */
-#define INRATE       65 * SAMPSPERSYM
-#define INHISTORY    INRATE * 2
-#define INCHUNK      INRATE * 9
-
-#define OUTRATE      96 * SAMPSPERSYM
-#define OUTHISTORY   OUTRATE * 2
-#define OUTCHUNK     OUTRATE * 9
-
-#define FILT_LEN     10
+#define INHISTORY    RESAMP_INRATE * 2
+#define INCHUNK      RESAMP_INRATE * 9
+#define OUTHISTORY   RESAMP_OUTRATE * 2
+#define OUTCHUNK     RESAMP_OUTRATE * 9
 
 static struct cxvec *hr_tx_vec;
 static struct cxvec *hr_rx_vec;
@@ -59,14 +54,14 @@ bool RadioInterface::init()
 	assert(CHAN_M == 1);
 	assert(chanActive[0]);
 
-	dnsampler = new Resampler(INRATE, OUTRATE, FILT_LEN, 1);
+	dnsampler = new Resampler(RESAMP_INRATE, RESAMP_OUTRATE, RESAMP_FILT_LEN, 1);
 	if (!dnsampler->init(NULL)) {
 		LOG(ALERT) << "Rx resampler failed to initialize";
 		return false; 
 	}
 	dnsampler->activateChan(0);
 
-	upsampler = new Resampler(OUTRATE, INRATE, FILT_LEN, 1);
+	upsampler = new Resampler(RESAMP_OUTRATE, RESAMP_INRATE, RESAMP_FILT_LEN, 1);
 	if (!upsampler->init(NULL)) {
 		LOG(ALERT) << "Tx resampler failed to initialize";
 		return false;
@@ -80,9 +75,9 @@ bool RadioInterface::init()
 	 * rate buffers are allocated in the main radio interface code.
 	 */
 	hr_tx_vec = cxvec_alloc(INCHUNK * 4, 0, NULL, 0);
-	hr_rx_vec = cxvec_alloc(OUTCHUNK * 4, FILT_LEN, NULL, 0);
+	hr_rx_vec = cxvec_alloc(OUTCHUNK * 4, RESAMP_FILT_LEN, NULL, 0);
 	lr_rx_vec = cxvec_alloc(8 * 625, 0, (cmplx *) rcvBuffer[0], 0);
-	lr_tx_vec = cxvec_alloc(8 * 625, FILT_LEN, (cmplx *) sendBuffer[0], 0);
+	lr_tx_vec = cxvec_alloc(8 * 625, RESAMP_FILT_LEN, (cmplx *) sendBuffer[0], 0);
 
 	return true;
 }

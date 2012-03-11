@@ -21,13 +21,10 @@
 #include "radioDevice.h"
 #include "radioVector.h"
 #include "radioClock.h"
+#include "radioParams.h"
 
-/** samples per GSM symbol */
-#define SAMPSPERSYM 1
 #define INCHUNK    (625)
 #define OUTCHUNK   (625)
-#define CHAN_M      5
-
 
 /** class to interface the transceiver with the USRP */
 class RadioInterface {

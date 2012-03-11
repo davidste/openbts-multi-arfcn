@@ -37,12 +37,7 @@
 
 /*
     master_clk_rt     - Master clock frequency - ignored if host resampling is
-                        enabled
-
-    rx_smpl_offset    - Timing correction in seconds between receive and
-                        transmit timestamps. This value corrects for delays on
-                        on the RF side of the timestamping point of the device.
-                        This value is generally empirically measured.
+                        enabled and only relevent to 64 MHz default clocks
 
     smpl_buf_sz       - The receive sample buffer size in bytes.
 
@@ -51,12 +46,6 @@
 const double master_clk_rt = 52e6;
 const size_t smpl_buf_sz = (1 << 20);
 const float tx_ampl = .3;
-
-#ifdef RESAMPLE
-const double rx_smpl_offset = .00005;
-#else
-const double rx_smpl_offset = .0000869;
-#endif
 
 /** Timestamp conversion
     @param timestamp a UHD or OpenBTS timestamp
@@ -148,7 +137,7 @@ private:
 */
 class uhd_device : public RadioDevice {
 public:
-	uhd_device(double rate, bool skip_rx);
+	uhd_device(double rate, double offset, bool skip_rx);
 	~uhd_device();
 
 	bool open();
@@ -218,6 +207,7 @@ private:
 	bool aligned;
 	bool skip_rx;
 
+	double rx_offset; 
 	size_t rx_pkt_cnt;
 	size_t drop_cnt;
 	uhd::time_spec_t prev_ts;
@@ -268,13 +258,13 @@ void uhd_msg_handler(uhd::msg::type_t type, const std::string &msg)
 	}
 }
 
-uhd_device::uhd_device(double rate, bool skip_rx)
+uhd_device::uhd_device(double rate, double offset, bool skip_rx)
 	: desired_smpl_rt(rate), actual_smpl_rt(0),
 	  tx_gain(0.0), tx_gain_min(0.0), tx_gain_max(0.0),
 	  rx_gain(0.0), rx_gain_min(0.0), rx_gain_max(0.0),
 	  tx_freq(0.0), rx_freq(0.0), tx_spp(0), rx_spp(0),
-	  started(false), aligned(false), rx_pkt_cnt(0), drop_cnt(0),
-	  prev_ts(0,0), ts_offset(0), rx_smpl_buf(NULL)
+	  started(false), aligned(false), rx_offset(offset), rx_pkt_cnt(0),
+	  drop_cnt(0), prev_ts(0,0), ts_offset(0), rx_smpl_buf(NULL)
 {
 	this->skip_rx = skip_rx;
 }
@@ -328,7 +318,7 @@ double uhd_device::set_rates(double rate)
 {
 	double actual_rt, actual_clk_rt;
 
-#ifndef RESAMPLE
+#if !defined(MULTICHAN) & !defined(RESAMPLE)
 	// Make sure we can set the master clock rate on this device
 	actual_clk_rt = usrp_dev->get_master_clock_rate();
 	if (actual_clk_rt > U1_DEFAULT_CLK_RT) {
@@ -466,8 +456,8 @@ bool uhd_device::open()
 	size_t buf_len = smpl_buf_sz / sizeof(uint64_t);
 	rx_smpl_buf = new smpl_buf(buf_len, actual_smpl_rt);
 
-	// Set receive chain sample offset 
-	ts_offset = (TIMESTAMP)(rx_smpl_offset * actual_smpl_rt);
+	// Set receive chain sample advance 
+	ts_offset = (TIMESTAMP)(rx_offset * actual_smpl_rt); 
 
 	// Initialize and shadow gain values 
 	init_gains();
@@ -983,7 +973,7 @@ std::string smpl_buf::str_code(ssize_t code)
 	}
 }
 
-RadioDevice *RadioDevice::make(double smpl_rt, bool skip_rx)
+RadioDevice *RadioDevice::make(double smpl_rt, double offset, bool skip_rx)
 {
-	return new uhd_device(smpl_rt, skip_rx);
+	return new uhd_device(smpl_rt, offset, skip_rx);
 }

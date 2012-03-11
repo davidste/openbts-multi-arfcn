@@ -35,17 +35,10 @@
 
 /* Channelizer parameters */
 #define CHUNKMUL		9
-
-#define INRATE			(2 * 65 * SAMPSPERSYM)
-#define INCHUNK			(INRATE * CHUNKMUL)
+#define INCHUNK			(RESAMP_INRATE * CHUNKMUL)
 #define INBUFLEN		(INCHUNK * 4)
-
-#define OUTRATE			(96 * SAMPSPERSYM)
-#define OUTCHUNK		(OUTRATE * CHUNKMUL * CHAN_M)
+#define OUTCHUNK		(RESAMP_OUTRATE * CHUNKMUL * CHAN_M)
 #define OUTBUFLEN		(OUTCHUNK * 4)
-
-#define CHAN_FILT_LEN		16
-#define RESAMP_FILT_LEN		8
 
 static struct cxvec *hr_tx_vec;
 static struct cxvec *hr_rx_vec;
@@ -62,14 +55,14 @@ bool RadioInterface::init()
 	int i;
 
 	chan = new Channelizer(CHAN_M, CHAN_FILT_LEN, RESAMP_FILT_LEN,
-			       INRATE, OUTRATE, CHUNKMUL);
+			       RESAMP_INRATE, RESAMP_OUTRATE, CHUNKMUL);
 	if (!chan->init(NULL)) {
 		LOG(ALERT) << "Rx channelizer failed to initialize";
 		return false;
 	}
 
 	synth = new Synthesis(CHAN_M, CHAN_FILT_LEN, RESAMP_FILT_LEN,
-			      OUTRATE, INRATE, CHUNKMUL);
+			      RESAMP_OUTRATE, RESAMP_INRATE, CHUNKMUL);
 	if (!synth->init(NULL)) {
 		LOG(ALERT) << "Tx channelizer failed to initialize";
 		return false;

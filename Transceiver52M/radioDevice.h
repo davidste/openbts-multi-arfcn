@@ -30,7 +30,8 @@ class RadioDevice {
   /* Available transport bus types */
   enum busType { USB, NET };
 
-  static RadioDevice *make(double desiredSampleRate, bool skipRx = false);
+  static RadioDevice *make(double desiredSampleRate,
+			   double offset, bool skipRx = false);
 
   /** Initialize the USRP */
   virtual bool open()=0;
