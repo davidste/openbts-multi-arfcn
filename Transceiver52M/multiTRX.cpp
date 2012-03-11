@@ -26,8 +26,6 @@
 #include "Transceiver.h"
 #include "radioDevice.h"
 
-#define DEVICERATE (400e3 * CHAN_M)
-
 ConfigurationTable gConfig("/etc/OpenBTS/OpenBTS.db");
 
 volatile bool gbShutdown = false;
@@ -71,7 +69,13 @@ int main(int argc, char *argv[])
 
 	srandom(time(NULL));
 
-	usrp = RadioDevice::make(DEVICERATE);
+	double rxOffset = getRadioOffset();
+	if (rxOffset == 0.0f) {
+		LOG(ALERT) << "Rx sample offset not found, using offset of 0.0s";
+		LOG(ALERT) << "Rx burst timing may not be accurate"; 
+	}
+
+	usrp = RadioDevice::make(DEVICE_RATE, rxOffset);
 	if (!usrp->open()) {
 		LOG(ALERT) << "Failed to open device, exiting...";
 		return EXIT_FAILURE;
