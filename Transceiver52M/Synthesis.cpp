@@ -99,7 +99,8 @@ int Synthesis::rotate(struct cxvec **in_vecs, struct cxvec *out_vec)
 
 Synthesis::Synthesis(int m, int chan_len, int resmpl_len,
 		     int r_num, int r_den, int r_mul) 
-	: ChannelizerBase(m, chan_len, resmpl_len, r_num, r_den, r_mul)
+	: ChannelizerBase(m, chan_len, resmpl_len,
+			  r_num, r_den, r_mul, TX_SYNTHESIS)
 {
 }
 

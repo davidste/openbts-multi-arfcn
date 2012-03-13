@@ -52,8 +52,14 @@ protected:
 	void release_chan_filt();
 	void reset_chan_parts();
 
+	/* Direction */
+	enum chan_type {
+		RX_CHANNELIZER,
+		TX_SYNTHESIS
+	};
+
 	ChannelizerBase(int m, int chan_len, int filt_len,
-			int r_num, int r_den, int r_mul);
+			int r_num, int r_den, int r_mul, chan_type type);
 	~ChannelizerBase();
 
 public:

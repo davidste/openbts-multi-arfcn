@@ -100,7 +100,8 @@ int Channelizer::rotate(struct cxvec *in_vec, struct cxvec **out_vecs)
 /* Setup channelizer paramaters */
 Channelizer::Channelizer(int m, int chan_len, int resmpl_len,
 			 int r_num, int r_den, int r_mul) 
-	: ChannelizerBase(m, chan_len, resmpl_len, r_num, r_den, r_mul)
+	: ChannelizerBase(m, chan_len, resmpl_len,
+			  r_num, r_den, r_mul, RX_CHANNELIZER)
 {
 }
 

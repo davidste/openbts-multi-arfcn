@@ -215,14 +215,20 @@ bool ChannelizerBase::init(struct cxvec **prot_filt)
 	return true;
 }
 
-/* Setup channelizer paramaters */
+/* 
+ * Setup channelizer paramaters
+ * 
+ * Channelizer operates at multiples of the channel rate and not the
+ * transceiver rate, which is a multiple of the GSM symbol rate. The
+ * channel rate may be higher or lower than the transceiver rate
+ * depending on samples-per-symbol and channel bandwidth. 
+ */
 ChannelizerBase::ChannelizerBase(int m, int chan_len, int resamp_len,
-				 int r_num, int r_den, int r_mul) 
+				 int r_num, int r_den, int r_mul, chan_type type) 
 	: chan_m(m), chan_filt_len(chan_len), resmpl_filt_len(resamp_len),
 	  resmpl_rat_num(r_num), resmpl_rat_den(r_den), resmpl_rat_mul(r_mul)
 {
-	/* Channelizer internally operates at multiples of the high rate */
-	if (r_num < r_den)
+	if (type == TX_SYNTHESIS)
 		chan_chnk = r_num * r_mul;
 	else
 		chan_chnk = r_den * r_mul;
