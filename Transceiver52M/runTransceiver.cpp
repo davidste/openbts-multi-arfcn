@@ -85,8 +85,12 @@ int main(int argc, char *argv[])
   }
 
   RadioInterface* radio = new RadioInterface(usrp,3,SAMPSPERSYM,mOversamplingRate,false);
-  Transceiver *trx = new Transceiver(5700,"127.0.0.1",SAMPSPERSYM,GSM::Time(3,0),radio);
-  trx->receiveFIFO(radio->receiveFIFO());
+  DriveLoop *drive = new DriveLoop(SAMPSPERSYM,GSM::Time(3,0),radio);
+  Transceiver *trx = new Transceiver(5700,"127.0.0.1",SAMPSPERSYM,radio,drive, 0);
+  trx->receiveFIFO(radio->receiveFIFO(0));
+  trx->transmitQueue(drive->priorityQueue(0));
+  radio->activateChan(0);
+
 /*
   signalVector *gsmPulse = generateGSMPulse(2,1);
   BitVector normalBurstSeg = "0000101010100111110010101010010110101110011000111001101010000";
@@ -119,12 +123,12 @@ int main(int argc, char *argv[])
   usrp->loadBurst(finalVecShort,finalVec.size());
 */
   trx->start();
-  //int i = 0;
+
   while(!gbShutdown) { sleep(1); }//i++; if (i==60) break;}
 
   cout << "Shutting down transceiver..." << endl;
 
-//  trx->stop();
   delete trx;
-//  delete radio;
+  delete drive;
+  delete radio;
 }
