@@ -62,6 +62,9 @@ public:
 	    @param in_vecs set of 'M' input vectors 
 	    @param out_vecs set of 'M' output vectors
 	    @return number of samples outputted per each channel
+
+	    Input and output vector lengths must of be equal multiples of the
+	    rational conversion rate denominator and numerator respectively.
 	 */
 	int rotate(struct cxvec **in, struct cxvec **out);
 
