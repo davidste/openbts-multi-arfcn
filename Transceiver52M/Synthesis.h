@@ -26,23 +26,23 @@
 class Synthesis : public ChannelizerBase {
 public:
 	/** Constructor for synthesis filterbank
-	    @param m number of channels
-	    @param chan_len length of each channelizer partition filter
-	    @param resmpl_len length of each resampler partition filter
-	    @param r_num numerator of resampling ratio
-	    @param r_den denominator of resampling ratio
-	    @param r_mul ratio multiplification factor
+	    @param wChanM number of channels
+	    @param wPartitionLen length of each channelizer partition filter
+	    @param wResampLen length of each resampler partition filter
+	    @param wP numerator of resampling ratio
+	    @param wQ denominator of resampling ratio
+	    @param mMul ratio multiplification factor
 	*/
-	Synthesis(int m, int chan_len, int resmpl_len,
-		  int r_num, int r_den, int r_mul);
+	Synthesis(int wChanM, int wPartitionLen, int wResampLen,
+		  int wP, int wQ, int mMul);
 	~Synthesis();
 
 	/** Rotate "output commutator" and drive samples through filterbank
-	    @param in_vecs set of 'M' input vectors 
-	    @param out_vec output vector 
+	    @param in set of 'M' input vectors 
+	    @param out output vector 
 	    @return number of samples outputted
 	 */
-	int rotate(struct cxvec **in_vecs, struct cxvec *out_vec);
+	int rotate(struct cxvec **in, struct cxvec *out);
 };
 
 #endif /* _CHANNELIZER_TX_H_ */

@@ -39,11 +39,11 @@
 #define OUTHISTORY   RESAMP_OUTRATE * 2
 #define OUTCHUNK     RESAMP_OUTRATE * 9
 
-static struct cxvec *hr_tx_vec;
-static struct cxvec *hr_rx_vec;
+static struct cxvec *highRateTxBuf;
+static struct cxvec *highRateRxBuf;
 
-static struct cxvec *lr_tx_vec;
-static struct cxvec *lr_rx_vec;
+static struct cxvec *lowRateTxBuf;
+static struct cxvec *lowRateRxBuf;
 
 static Resampler *upsampler;
 static Resampler *dnsampler;
@@ -74,10 +74,11 @@ bool RadioInterface::init()
 	 * and requires headroom equivalent to the filter length. Low
 	 * rate buffers are allocated in the main radio interface code.
 	 */
-	hr_tx_vec = cxvec_alloc(INCHUNK * 4, 0, NULL, 0);
-	hr_rx_vec = cxvec_alloc(OUTCHUNK * 4, RESAMP_FILT_LEN, NULL, 0);
-	lr_rx_vec = cxvec_alloc(8 * 625, 0, (cmplx *) rcvBuffer[0], 0);
-	lr_tx_vec = cxvec_alloc(8 * 625, RESAMP_FILT_LEN, (cmplx *) sendBuffer[0], 0);
+	highRateTxBuf = cxvec_alloc(INCHUNK * 4, 0, NULL, 0);
+	highRateRxBuf = cxvec_alloc(OUTCHUNK * 4, RESAMP_FILT_LEN, NULL, 0);
+
+	lowRateRxBuf = cxvec_alloc(8 * 625, 0, (cmplx *) rcvBuffer[0], 0);
+	lowRateTxBuf = cxvec_alloc(8 * 625, RESAMP_FILT_LEN, (cmplx *) sendBuffer[0], 0);
 
 	return true;
 }
@@ -85,15 +86,15 @@ bool RadioInterface::init()
 /* Shutdown I/O specific objects */
 void RadioInterface::close()
 {
-	cxvec_free(hr_tx_vec);
-	cxvec_free(hr_rx_vec);
+	cxvec_free(highRateTxBuf);
+	cxvec_free(highRateRxBuf);
 
 	/* Deallocate class member buffers in the destructor */
-	lr_rx_vec->buf = NULL;
-	lr_tx_vec->buf = NULL;
+	lowRateRxBuf->buf = NULL;
+	lowRateTxBuf->buf = NULL;
 
-	cxvec_free(lr_rx_vec);
-	cxvec_free(lr_tx_vec);
+	cxvec_free(lowRateRxBuf);
+	cxvec_free(lowRateTxBuf);
 
 	delete upsampler;
 	delete dnsampler;
@@ -102,31 +103,31 @@ void RadioInterface::close()
 /* Receive a timestamped chunk from the device */
 void RadioInterface::pullBuffer()
 {
-	int num_cv, num_rd;
+	int numConverted, numRead;
 	bool local_underrun;
 
 	/* Read samples. Fail if we don't get what we want. */
-	hr_rx_vec->len = mRadio->readSamples((float *) hr_rx_vec->data,
-					     OUTCHUNK, &overrun, readTimestamp,
-					     &local_underrun);
+	numRead = mRadio->readSamples((float *) highRateRxBuf->data,
+				      OUTCHUNK, &overrun, readTimestamp,
+				      &local_underrun);
 
-	LOG(DEBUG) << "Rx read " << hr_rx_vec->len << " samples from device";
-	assert(hr_rx_vec->len == OUTCHUNK);
+	LOG(DEBUG) << "Rx read " << highRateRxBuf->len << " samples from device";
+	assert(numRead == OUTCHUNK);
 
+	highRateRxBuf->len = numRead;
 	underrun |= local_underrun;
-	readTimestamp += (TIMESTAMP) hr_rx_vec->len;
+	readTimestamp += (TIMESTAMP) highRateRxBuf->len;
 
-	lr_rx_vec->start_idx = rcvCursor;
-	lr_rx_vec->data = &lr_rx_vec->buf[rcvCursor];
-	lr_rx_vec->len = INCHUNK;
+	lowRateRxBuf->start_idx = rcvCursor;
+	lowRateRxBuf->data = &lowRateRxBuf->buf[rcvCursor];
+	lowRateRxBuf->len = INCHUNK;
 
-	num_cv = dnsampler->rotate(&hr_rx_vec, &lr_rx_vec);
-
-	rcvCursor += num_cv;
+	numConverted = dnsampler->rotate(&highRateRxBuf, &lowRateRxBuf);
+	rcvCursor += numConverted;
 }
 
 /* Resize data buffers of length 'len' after reading 'n' samples */
-static void shift_tx_bufs(struct cxvec *vec, int len, int n)
+static void shiftTxBufs(struct cxvec *vec, int len, int n)
 {
 	memmove(vec->data, &vec->data[n], (len - n) * sizeof(cmplx));
 }
@@ -134,31 +135,29 @@ static void shift_tx_bufs(struct cxvec *vec, int len, int n)
 /* Send a timestamped chunk to the device */
 void RadioInterface::pushBuffer()
 {
-	int i, num_cv, num_chunks;
+	int i, numConverted, numChunks, numSent;
 
 	if (sendCursor < INCHUNK)
 		return;
 
 	/* Only handle 1 for now */
-	num_chunks = 1;
-	lr_tx_vec->len = num_chunks * INCHUNK;
-	hr_tx_vec->len = num_chunks * OUTCHUNK;
+	numChunks = 1;
+	lowRateTxBuf->len = numChunks * INCHUNK;
+	highRateTxBuf->len = numChunks * OUTCHUNK;
 
-	num_cv = upsampler->rotate(&lr_tx_vec, &hr_tx_vec);
+	numConverted = upsampler->rotate(&lowRateTxBuf, &highRateTxBuf);
 
 	/* Write samples. Fail if we don't get what we want. */
-	int num_smpls = mRadio->writeSamples((float *) hr_tx_vec->data,
-					     num_cv,
-					     &underrun,
-					     writeTimestamp);
-	assert(num_smpls == num_cv);
-
-	writeTimestamp += (TIMESTAMP) num_smpls;
+	numSent = mRadio->writeSamples((float *) highRateTxBuf->data,
+					numConverted,
+					&underrun,
+					writeTimestamp);
+	assert(numSent == numConverted);
+	writeTimestamp += (TIMESTAMP) numSent;
 
 	/* Move unsent samples to beginning of buffer */
-	shift_tx_bufs(lr_tx_vec, sendCursor, lr_tx_vec->len);
-
-	sendCursor -= lr_tx_vec->len;
+	shiftTxBufs(lowRateTxBuf, sendCursor, lowRateTxBuf->len);
+	sendCursor -= lowRateTxBuf->len;
 	assert(sendCursor >= 0);
 }
 

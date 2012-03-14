@@ -28,18 +28,18 @@
 #include "Synthesis.h"
 
 /* Check vector length validity */
-static bool check_vec_len(struct cxvec **in_vecs, struct cxvec *out_vec,
-			 int rat_num, int rat_den, int rat_mul)
+static bool checkVectorLen(struct cxvec **in, struct cxvec *out,
+			   int p, int q, int mul)
 {
-	if (in_vecs[0]->len % (rat_den * rat_mul)) {
-		LOG(ERR) << "Invalid input length " << in_vecs[0]->len
-			 <<  " is not multiple of " << rat_den * rat_mul;
+	if (in[0]->len % (q * mul)) {
+		LOG(ERR) << "Invalid input length " << in[0]->len
+			 <<  " is not multiple of " << q * mul;
 		return false;
 	}
 
-	if (out_vec->len % (rat_num * rat_mul)) {
-		LOG(ERR) << "Invalid output length " << out_vec->len
-			 <<  " is not multiple of " << rat_num * rat_mul;
+	if (out->len % (p * mul)) {
+		LOG(ERR) << "Invalid output length " << out->len
+			 <<  " is not multiple of " << p * mul;
 		return false;
 	}
 
@@ -52,55 +52,54 @@ static bool check_vec_len(struct cxvec **in_vecs, struct cxvec *out_vec,
  * "harris, fred, Multirate Signal Processing, Upper Saddle River, NJ,
  *     Prentice Hall, 2006."
  */
-int Synthesis::rotate(struct cxvec **in_vecs, struct cxvec *out_vec)
+int Synthesis::rotate(struct cxvec **in, struct cxvec *out)
 {
 	int i, rc;
 
-	if (!check_vec_len(in_vecs, out_vec, resmpl_rat_num,
-			   resmpl_rat_den, resmpl_rat_mul)) {
+	if (!checkVectorLen(in, out, mP, mQ, mMul)) {
 		return -1;
 	}
 
 	/*
 	 * Resample inputs from GSM rate to a multiple of channel spacing
 	 */
-	reset_chan_parts();
-	resmplr->rotate(in_vecs, part_in_vecs);
+	resetPartitions();
+	mResampler->rotate(in, partInputs);
 
 	/* 
 	 * Interleave resampled input into FFT
 	 * Deinterleave back into filterbank partition input buffers
 	 */
-	cxvec_interlv(part_in_vecs, fft_vec, chan_m);
-	cxvec_fft(fft_vec, fft_vec);
-	cxvec_deinterlv_fw(fft_vec, part_in_vecs, chan_m);
+	cxvec_interlv(partInputs, fftBuffer, mChanM);
+	cxvec_fft(fftBuffer, fftBuffer);
+	cxvec_deinterlv_fw(fftBuffer, partInputs, mChanM);
 
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
-	for (i = 0; i < chan_m; i++) {	
-		memcpy(part_in_vecs[i]->buf, hist_vecs[i]->data,
-		       chan_filt_len * sizeof(cmplx));
+	for (i = 0; i < mChanM; i++) {	
+		memcpy(partInputs[i]->buf, history[i]->data,
+		       mPartitionLen * sizeof(cmplx));
 
-		cxvec_convolve(part_in_vecs[i], chan_filt_vecs[i], part_out_vecs[i]);
+		cxvec_convolve(partInputs[i], partitions[i], partOutputs[i]);
 
-		memcpy(hist_vecs[i]->data,
-		       &part_in_vecs[i]->data[part_in_vecs[i]->len - chan_filt_len],
-		       chan_filt_len * sizeof(cmplx));
+		memcpy(history[i]->data,
+		       &partInputs[i]->data[partInputs[i]->len - mPartitionLen],
+		       mPartitionLen * sizeof(cmplx));
 	}
 
 	/* 
 	 * Interleave into output vector
 	 */
-	cxvec_interlv(part_out_vecs, out_vec, chan_m);
+	cxvec_interlv(partOutputs, out, mChanM);
 
-	return out_vec->len;
+	return out->len;
 }
 
-Synthesis::Synthesis(int m, int chan_len, int resmpl_len,
-		     int r_num, int r_den, int r_mul) 
-	: ChannelizerBase(m, chan_len, resmpl_len,
-			  r_num, r_den, r_mul, TX_SYNTHESIS)
+Synthesis::Synthesis(int wChanM, int wPartitionLen, int wResampLen,
+		     int wP, int wQ, int wMul) 
+	: ChannelizerBase(wChanM, wPartitionLen, wResampLen,
+			  wP, wQ, wMul, TX_SYNTHESIS)
 {
 }
 

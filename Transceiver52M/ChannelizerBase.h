@@ -26,40 +26,39 @@
 class ChannelizerBase {
 protected:
 	/* Sample rate conversion factors */
-	int resmpl_rat_num;
-	int resmpl_rat_den;
-	int resmpl_rat_mul;
-	int chan_chnk;
-	int dev_rt;
+	int mP;
+	int mQ;
+	int mMul;
+	int chunkLen; 
 
 	/* Channelizer parameters */
-	int chan_m;
-	int chan_filt_len;
+	int mChanM;
+	int mPartitionLen;
 
-	/* Channelizer internal filterbanks buffers */
-	struct cxvec **chan_filt_vecs;
-	struct cxvec **part_in_vecs;
-	struct cxvec **part_out_vecs;
-	struct cxvec **hist_vecs;
-	struct cxvec *fft_vec;
+	/* Channelizer internal filterbank buffers */
+	struct cxvec **partitions;
+	struct cxvec **partInputs;
+	struct cxvec **partOutputs;
+	struct cxvec **history;
+	struct cxvec *fftBuffer;
 
 	/* Output sample rate converter */
-	Resampler *resmplr;
-	int resmpl_filt_len;
+	Resampler *mResampler;
+	int mResampLen;
 
 	/* Initializer internals */
-	bool init_chan_filt(struct cxvec **fill_prot_filt);
-	void release_chan_filt();
-	void reset_chan_parts();
+	bool initFilters(struct cxvec **protoFilter);
+	void releaseFilters();
+	void resetPartitions();
 
 	/* Direction */
-	enum chan_type {
+	enum chanType {
 		RX_CHANNELIZER,
 		TX_SYNTHESIS
 	};
 
-	ChannelizerBase(int m, int chan_len, int filt_len,
-			int r_num, int r_den, int r_mul, chan_type type);
+	ChannelizerBase(int wChanM, int wPartitionLen, int wResampLen,
+			int wP, int wQ, int wMul, chanType type);
 	~ChannelizerBase();
 
 public:
@@ -67,7 +66,7 @@ public:
 	    @param prot_filt optional pointer reference to store prototype filter
 	    @return negative value on error, zero otherwise
 	 */
-	bool init(struct cxvec **prot_filt);
+	bool init(struct cxvec **protoFilter);
 
 	/** Activate a specific channel of the internal resampler
 	    @param num channel number to activate
