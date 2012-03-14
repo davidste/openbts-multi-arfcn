@@ -43,6 +43,8 @@ dist_rev4_DATA = std_inband.rbf
 
 SUBDIRS = sigproc
 
+SIGPROC_LA = $(top_builddir)/Transceiver52M/sigproc/libsigproc.la
+
 EXTRA_DIST = \
 	README \
 	README.Talgorithm
@@ -55,22 +57,33 @@ COMMON_SOURCES = \
 	radioClock.cpp \
 	sigProcLib.cpp \
 	Transceiver.cpp \
+	DriveLoop.cpp \
 	DummyLoad.cpp
 
+if MULTICHAN 
+libtransceiver_la_SOURCES = \
+	$(COMMON_SOURCES) \
+	radioIOMulti.cpp \
+	ChannelizerBase.cpp \
+	Channelizer.cpp \
+	Synthesis.cpp \
+	Resampler.cpp
+else
 if RESAMPLE
 libtransceiver_la_SOURCES = \
 	$(COMMON_SOURCES) \
-	radioIOResamp.cpp
+	radioIOResamp.cpp \
+	Resampler.cpp
 else
 libtransceiver_la_SOURCES = \
 	$(COMMON_SOURCES) \
 	radioIO.cpp
 endif
+endif
 
 noinst_PROGRAMS = \
-	USRPping \
 	transceiver \
-	sigProcLibTest 
+	sigProcLibTest
 
 noinst_HEADERS = \
 	Complex.h \
@@ -83,18 +96,32 @@ noinst_HEADERS = \
 	USRPDevice.h \
 	DummyLoad.h \
 	rcvLPF_651.h \
-	sendLPF_961.h
+	sendLPF_961.h \
+	ChannelizerBase.h \
+	Channelizer.h \
+	Synthesis.h \
+	Resampler.h
 
-USRPping_SOURCES = USRPping.cpp
-USRPping_LDADD = \
+if MULTICHAN
+transceiver_SOURCES = multiTRX.cpp
+transceiver_LDADD = \
 	libtransceiver.la \
-	$(COMMON_LA) $(SQLITE_LA)
-
+	$(GSM_LA) \
+	$(COMMON_LA) \
+	$(SQLITE_LA) \
+	$(SIGPROC_LA) \
+	$(FFTW_LIBS)
+else
 transceiver_SOURCES = runTransceiver.cpp
 transceiver_LDADD = \
 	libtransceiver.la \
 	$(GSM_LA) \
-	$(COMMON_LA) $(SQLITE_LA)
+	$(COMMON_LA) \
+	$(SQLITE_LA)
+if RESAMPLE
+transceiver_LDADD += $(SIGPROC_LA)
+endif
+endif
 
 sigProcLibTest_SOURCES = sigProcLibTest.cpp
 sigProcLibTest_LDADD = \
@@ -106,13 +133,11 @@ sigProcLibTest_LDADD = \
 if UHD
 libtransceiver_la_SOURCES += UHDDevice.cpp
 transceiver_LDADD += $(UHD_LIBS)
-USRPping_LDADD += $(UHD_LIBS)
 sigProcLibTest_LDADD += $(UHD_LIBS)
 else
 if USRP1
 libtransceiver_la_SOURCES += USRPDevice.cpp
 transceiver_LDADD += $(USRP_LIBS)
-USRPping_LDADD += $(USRP_LIBS)
 sigProcLibTest_LDADD += $(USRP_LIBS)
 else
 #we should never be here, as one of the above mustbe defined for us to build
