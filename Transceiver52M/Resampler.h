@@ -25,38 +25,39 @@
 
 class Resampler {
 private:
-	int filt_rat_num;
-	int filt_rat_den;
-	int part_filt_len;
-	int filt_m;
-	bool *chan_active;
+	int mP;
+	int mQ;
+	int mChanM;
+	int mPartitionLen;
 
-	int *input_idx;
-	int *output_path;
+	bool *chanActive;
+	int *inputIndex;
+	int *outputPath;
 
-	struct cxvec **part_filt_vecs;
-	struct cxvec **hist_vecs;
+	struct cxvec **partitions;
+	struct cxvec **history;
 
-	bool init_filt(struct cxvec **fill_prot_filt);
-	void precompute_path();
-	void release_dnsmpl_filt();
-	int rotate_single(struct cxvec *in, struct cxvec *out, struct cxvec *hist);
+	bool initFilters(struct cxvec **protoFilter);
+	void releaseFilters();
+	void computePath();
+
+	int rotateSingle(struct cxvec *in, struct cxvec *out, struct cxvec *hist);
 
 public:
 	/** Constructor for 'M' channel rational resampler 
-	    @param r_num numerator of resampling ratio
-	    @param r_den denominator of resampling ratio
-	    @param filt_len length of each partition filters
-	    @param m number of channels
+	    @param wP numerator of resampling ratio
+	    @param wQ denominator of resampling ratio
+	    @param wPartitionLen length of each partition filters
+	    @param wM number of channels
 	*/
-	Resampler(int r_num, int r_den, int filt_len, int m);
+	Resampler(int wP, int wQ, int wPartitionLen, int wChanM);
 	~Resampler();
 
 	/** Initilize resampler filterbank 
 	    @param prot_filt optional pointer reference to store prototype filter
 	    @return negative value on error, zero otherwise
 	 */
-	bool init(struct cxvec **prot_filt);
+	bool init(struct cxvec **protoFilter);
 
 	/** Rotate "commutator" and drive samples through filterbank
 	    @param in_vecs set of 'M' input vectors 
@@ -82,4 +83,3 @@ public:
 };
 
 #endif /* _DOWNSAMPLER_H_ */
-

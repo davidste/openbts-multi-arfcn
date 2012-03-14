@@ -28,18 +28,18 @@
 #include "Channelizer.h"
 
 /* Check vector length validity */
-static bool check_vec_len(struct cxvec *in_vec, struct cxvec **out_vecs,
-			 int rat_num, int rat_den, int rat_mul)
+static bool checkVectorLen(struct cxvec *in, struct cxvec **out,
+			   int p, int q, int mul)
 {
-	if (in_vec->len % (rat_den * rat_mul)) {
-		LOG(ERR) << "Invalid input length " << in_vec->len
-			 <<  " is not multiple of " << rat_den * rat_mul;
+	if (in->len % (q * mul)) {
+		LOG(ERR) << "Invalid input length " << in->len
+			 <<  " is not multiple of " << q * mul;
 		return false;
 	}
 
-	if (out_vecs[0]->len % (rat_num * rat_mul)) {
-		LOG(ERR) << "Invalid output length " << out_vecs[0]->len
-			 <<  " is not multiple of " << rat_num * rat_mul;
+	if (out[0]->len % (p * mul)) {
+		LOG(ERR) << "Invalid output length " << out[0]->len
+			 <<  " is not multiple of " << p * mul;
 		return false;
 	}
 
@@ -52,56 +52,55 @@ static bool check_vec_len(struct cxvec *in_vec, struct cxvec **out_vecs,
  * "harris, fred, Multirate Signal Processing, Upper Saddle River, NJ,
  *     Prentice Hall, 2006."
  */
-int Channelizer::rotate(struct cxvec *in_vec, struct cxvec **out_vecs)
+int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 {
 	int i, len;
 
-	if (!check_vec_len(in_vec, out_vecs, resmpl_rat_num,
-			   resmpl_rat_den, resmpl_rat_mul)) {
+	if (!checkVectorLen(in, out, mP, mQ, mMul)) {
 		return -1;
 	}
 
 	/* 
 	 * Reset and load parition vectors from input vector
 	 */
-	reset_chan_parts();
-	cxvec_deinterlv_rv(in_vec, part_in_vecs, chan_m);
+	resetPartitions();
+	cxvec_deinterlv_rv(in, partInputs, mChanM);
 
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
-	for (i = 0; i < chan_m; i++) {	
-		memcpy(part_in_vecs[i]->buf, hist_vecs[i]->data,
-		       chan_filt_len * sizeof(cmplx));
+	for (i = 0; i < mChanM; i++) {	
+		memcpy(partInputs[i]->buf, history[i]->data,
+		       mPartitionLen * sizeof(cmplx));
 
-		cxvec_convolve(part_in_vecs[i], chan_filt_vecs[i], part_out_vecs[i]);
+		cxvec_convolve(partInputs[i], partitions[i], partOutputs[i]);
 
-		memcpy(hist_vecs[i]->data,
-		       &part_in_vecs[i]->data[part_in_vecs[i]->len - chan_filt_len],
-		       chan_filt_len * sizeof(cmplx));
+		memcpy(history[i]->data,
+		       &partInputs[i]->data[partInputs[i]->len - mPartitionLen],
+		       mPartitionLen * sizeof(cmplx));
 	}
 
 	/* 
 	 * Interleave convolution output into FFT
 	 * Deinterleave back into partition output buffers
 	 */
-	cxvec_interlv(part_out_vecs, fft_vec, chan_m);
-	cxvec_fft(fft_vec, fft_vec);
-	cxvec_deinterlv_fw(fft_vec, part_out_vecs, chan_m);
+	cxvec_interlv(partOutputs, fftBuffer, mChanM);
+	cxvec_fft(fftBuffer, fftBuffer);
+	cxvec_deinterlv_fw(fftBuffer, partOutputs, mChanM);
 
 	/* 
 	 * Downsample FFT output from channel rate multiple to GSM symbol rate
 	 */
-	len = resmplr->rotate(part_out_vecs, out_vecs);
+	len = mResampler->rotate(partOutputs, out);
 
 	return len;
 }
 
 /* Setup channelizer paramaters */
-Channelizer::Channelizer(int m, int chan_len, int resmpl_len,
-			 int r_num, int r_den, int r_mul) 
-	: ChannelizerBase(m, chan_len, resmpl_len,
-			  r_num, r_den, r_mul, RX_CHANNELIZER)
+Channelizer::Channelizer(int wChanM, int wPartitionLen, int wResampLen,
+			 int wP, int wQ, int wMul) 
+	: ChannelizerBase(wChanM, wPartitionLen, wResampLen,
+			  wP, wQ, wMul, RX_CHANNELIZER)
 {
 }
 

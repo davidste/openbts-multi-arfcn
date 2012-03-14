@@ -25,20 +25,20 @@
 /* Receive a timestamped chunk from the device */ 
 void RadioInterface::pullBuffer()
 {
-	bool local_underrun;
+	bool localUnderrun;
 
 	/* Read samples. Fail if we don't get what we want. */
-	int num_rd = mRadio->readSamples(&rcvBuffer[0][2 * rcvCursor],
+	int numRead = mRadio->readSamples(&rcvBuffer[0][2 * rcvCursor],
 					 OUTCHUNK, &overrun,
-					 readTimestamp, &local_underrun);
+					 readTimestamp, &localUnderrun);
 
-	LOG(DEBUG) << "Rx read " << num_rd << " samples from device";
-	assert(num_rd == OUTCHUNK);
+	LOG(DEBUG) << "Rx read " << numRead << " samples from device";
+	assert(numRead == OUTCHUNK);
 
-	underrun |= local_underrun;
-	readTimestamp += (TIMESTAMP) num_rd;
+	underrun |= localUnderrun;
+	readTimestamp += (TIMESTAMP) numRead;
 
-	rcvCursor += num_rd;
+	rcvCursor += numRead;
 }
 
 /* Send timestamped chunk to the device with arbitrary size */ 
@@ -48,13 +48,13 @@ void RadioInterface::pushBuffer()
 		return;
 
 	/* Write samples. Fail if we don't get what we want. */
-	int num_smpls = mRadio->writeSamples(sendBuffer[0],
+	int numSent = mRadio->writeSamples(sendBuffer[0],
 					     sendCursor,
 					     &underrun,
 					     writeTimestamp);
-	assert(num_smpls == sendCursor);
+	assert(numSent == sendCursor);
 
-	writeTimestamp += (TIMESTAMP) num_smpls;
+	writeTimestamp += (TIMESTAMP) numSent;
 	sendCursor = 0;
 }
 

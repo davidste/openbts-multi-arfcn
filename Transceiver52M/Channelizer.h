@@ -26,23 +26,23 @@
 class Channelizer : public ChannelizerBase {
 public:
 	/** Constructor for channelizing filter bank
-	    @param m number of channels
-	    @param chan_len length of each channelizer partition filter
-	    @param resmpl_len length of each resampler partition filter
-	    @param r_num numerator of resampling ratio
-	    @param r_den denominator of resampling ratio
-	    @param r_mul ratio multiplification factor
+	    @param wM number of channels
+	    @param wChanLen length of each channelizer partition filter
+	    @param wResampLen length of each resampler partition filter
+	    @param wP numerator of resampling ratio
+	    @param wQ denominator of resampling ratio
+	    @param wMul ratio multiplier 
 	*/
-	Channelizer(int m, int chan_len, int resmpl_len,
-		    int r_num, int r_den, int r_mul);
+	Channelizer(int wM, int wChanLen, int wResampLen,
+		    int wP, int wQ, int wMul);
 	~Channelizer();
 
 	/** Rotate "input commutator" and drive samples through filterbank
-	    @param in_vec input vector 
-	    @param out_vecs set of 'M' output vectors 
+	    @param in input vector 
+	    @param out set of 'M' output vectors 
 	    @return number of samples outputted for each output vector
 	 */
-	int rotate(struct cxvec *in_vec, struct cxvec **out_vecs);
+	int rotate(struct cxvec *in, struct cxvec **out);
 };
 
 #endif /* _CHANNELIZER_RX_H_ */

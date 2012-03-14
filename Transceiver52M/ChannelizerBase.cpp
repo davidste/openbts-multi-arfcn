@@ -29,16 +29,16 @@
 #include "sigproc/sigproc.h"
 
 /* Reset filterbank input/output partition vectors */
-void ChannelizerBase::reset_chan_parts()
+void ChannelizerBase::resetPartitions()
 {
 	int i;
 
-	for (i = 0; i < chan_m; i++) {
-		cxvec_reset(part_in_vecs[i]);
-		cxvec_reset(part_out_vecs[i]);
+	for (i = 0; i < mChanM; i++) {
+		cxvec_reset(partInputs[i]);
+		cxvec_reset(partOutputs[i]);
 	}
 
-	cxvec_reset(fft_vec);
+	cxvec_reset(fftBuffer);
 }
 
 /* 
@@ -49,16 +49,16 @@ void ChannelizerBase::reset_chan_parts()
  * "harris, fred, Multirate Signal Processing, Upper Saddle River, NJ,
  *     Prentice Hall, 2006."
  */
-bool ChannelizerBase::init_chan_filt(struct cxvec **fill_prot_filt)
+bool ChannelizerBase::initFilters(struct cxvec **protoFilter)
 {
 	int i, n;
-	int m = chan_m;
-	int prot_filt_len = chan_m * chan_filt_len;
+	int m = mChanM;
+	int protoFilterLen = m * mPartitionLen;
 
-	float *prot_filt;
+	float *protoFilterBase;
 	float sum = 0.0f;
 	float scale = 0.0f;
-	float midpt = prot_filt_len / 2;
+	float midpt = protoFilterLen / 2;
 
 	/* 
 	 * Allocate 'M' partition filters and the temporary prototype
@@ -67,16 +67,16 @@ bool ChannelizerBase::init_chan_filt(struct cxvec **fill_prot_filt)
 	 */
 	int flags = CXVEC_FLG_REAL_ONLY | CXVEC_FLG_MEM_ALIGN;
 
-	prot_filt = (float *) malloc(prot_filt_len * sizeof(float));
-	if (!prot_filt)
+	protoFilterBase = (float *) malloc(protoFilterLen * sizeof(float));
+	if (!protoFilterBase)
 		return false;
 
-	chan_filt_vecs = (struct cxvec **) malloc(sizeof(struct cxvec *) * m);
-	if (!chan_filt_vecs)
+	partitions = (struct cxvec **) malloc(sizeof(struct cxvec *) * m);
+	if (!partitions)
 		return false;
 
 	for (i = 0; i < m; i++) {
-		chan_filt_vecs[i] = cxvec_alloc(chan_filt_len, 0, NULL, flags);
+		partitions[i] = cxvec_alloc(mPartitionLen, 0, NULL, flags);
 	}
 
 	/* 
@@ -84,70 +84,70 @@ bool ChannelizerBase::init_chan_filt(struct cxvec **fill_prot_filt)
 	 * Scale coefficients with DC filter gain set to unity divided
 	 * by the number of channels.
 	 */
-	for (i = 0; i < prot_filt_len; i++) {
-		prot_filt[i] = cxvec_sinc(((float) i - midpt) / chan_m);
-		sum += prot_filt[i];
+	for (i = 0; i < protoFilterLen; i++) {
+		protoFilterBase[i] = cxvec_sinc(((float) i - midpt) / m);
+		sum += protoFilterBase[i];
 	}
-	scale = chan_m / sum;
+	scale = mChanM / sum;
 
 	/* 
 	 * Populate partition filters and reverse the coefficients per
 	 * convolution requirements.
 	 */
-	for (i = 0; i < chan_filt_len; i++) {
+	for (i = 0; i < mPartitionLen; i++) {
 		for (n = 0; n < m; n++) {
-			chan_filt_vecs[n]->data[i].real = prot_filt[i * m + n] * scale;
-			chan_filt_vecs[n]->data[i].imag = 0.0f;
+			partitions[n]->data[i].real = protoFilterBase[i * m + n] * scale;
+			partitions[n]->data[i].imag = 0.0f;
 		}
 	}
 
 	for (i = 0; i < m; i++) {
-		cxvec_rvrs_conj(chan_filt_vecs[i], chan_filt_vecs[i]);
+		cxvec_rvrs_conj(partitions[i], partitions[i]);
 	}
 
 	/*
 	 * If requested, return the complex vector prototype filter.
 	 */
-	if (fill_prot_filt) {
-		*fill_prot_filt = cxvec_alloc(prot_filt_len, 0, NULL, flags);
-		(*fill_prot_filt)->flags = CXVEC_FLG_REAL_ONLY;
+	if (protoFilter) {
+		*protoFilter = cxvec_alloc(protoFilterLen, 0, NULL, flags);
+		(*protoFilter)->flags = CXVEC_FLG_REAL_ONLY;
 
-		for (i = 0; i < prot_filt_len; i++) {
-			(*fill_prot_filt)->data[i].real = prot_filt[i] * scale;
-			(*fill_prot_filt)->data[i].imag = 0.0f;
+		for (i = 0; i < protoFilterLen; i++) {
+			(*protoFilter)->data[i].real = protoFilterBase[i] * scale;
+			(*protoFilter)->data[i].imag = 0.0f;
 		}
 	}
 
-	free(prot_filt);
+	free(protoFilterBase);
 
 	return true;
 }
 
-void ChannelizerBase::release_chan_filt()
+void ChannelizerBase::releaseFilters()
 {
 	int i;
 
-	for (i = 0; i < chan_m; i++) {
-		cxvec_free(chan_filt_vecs[i]);
+	for (i = 0; i < mChanM; i++) {
+		cxvec_free(partitions[i]);
 	}
 
-	free(chan_filt_vecs);
+	free(partitions);
 }
 
 bool ChannelizerBase::activateChan(int num)
 {
-	return resmplr->activateChan(num);
+	return mResampler->activateChan(num);
 }
 
 bool ChannelizerBase::deactivateChan(int num)
 {
-	return resmplr->deactivateChan(num);
+	return mResampler->deactivateChan(num);
 }
 
 /* 
  * Setup filterbank internals
  */
-bool ChannelizerBase::init(struct cxvec **prot_filt)
+bool ChannelizerBase::init(struct cxvec **protoFilterBase)
 {
 	int i, rc;
 
@@ -155,34 +155,33 @@ bool ChannelizerBase::init(struct cxvec **prot_filt)
 	 * Filterbank coefficients, fft plan, history, and output sample
 	 * rate conversion blocks
 	 */
-	if (!init_chan_filt(prot_filt)) {
+	if (!initFilters(protoFilterBase)) {
 		LOG(ERR) << "Failed to initialize channelizing filter";
 		return false;
 	}
 
-	fft_vec = cxvec_alloc(chan_chnk * chan_m, 0, NULL, 0);
-	if (!fft_vec) {
+	fftBuffer = cxvec_alloc(chunkLen * mChanM, 0, NULL, 0);
+	if (!fftBuffer) {
 		LOG(ERR) << "Memory allocation error";
 		return false;
 	}
 
-	rc = init_fft(0, chan_m);
+	rc = init_fft(0, mChanM);
 	if (rc < 0) {
 		LOG(ERR) << "Failed to initialize FFT";
 		return false;
 	}
 
-	resmplr = new Resampler(resmpl_rat_num, resmpl_rat_den,
-				resmpl_filt_len, chan_m);
-	if (!resmplr->init(NULL)) {
+	mResampler = new Resampler(mP, mQ, mResampLen, mChanM);
+	if (!mResampler->init(NULL)) {
 		LOG(ERR) << "Failed to initialize resampling filter";
 		return false;
 	}
 
-	hist_vecs = (struct cxvec **) malloc(sizeof(struct cxvec *) * chan_m);
-	for (i = 0; i < chan_m; i++) {
-		hist_vecs[i] =  cxvec_alloc(chan_filt_len, 0, NULL, 0);
-		cxvec_reset(hist_vecs[i]);
+	history = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	for (i = 0; i < mChanM; i++) {
+		history[i] =  cxvec_alloc(mPartitionLen, 0, NULL, 0);
+		cxvec_reset(history[i]);
 	}
 
 	/* 
@@ -195,21 +194,19 @@ bool ChannelizerBase::init(struct cxvec **prot_filt)
 	 * Output partition feeds into downsampler and convolves from index
 	 * zero at tap zero with an output length equal to a high rate chunk.
 	 */
-	part_in_vecs =
-		(struct cxvec **) malloc(sizeof(struct cxvec *) * chan_m);
-	part_out_vecs =
-		(struct cxvec **) malloc(sizeof(struct cxvec *) * chan_m);
+	partInputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	partOutputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
 
-	if (!part_in_vecs | !part_out_vecs) {
+	if (!partInputs | !partOutputs) {
 		LOG(ERR) << "Memory allocation error";
 		return false;
 	}
 
-	for (i = 0; i < chan_m; i++) {
-		part_in_vecs[i] = cxvec_alloc(chan_chnk + chan_filt_len,
-					      chan_filt_len, NULL, 0);
-		part_out_vecs[i] = cxvec_alloc(chan_chnk + resmpl_filt_len,
-					       resmpl_filt_len, NULL, 0);
+	for (i = 0; i < mChanM; i++) {
+		partInputs[i] = cxvec_alloc(chunkLen + mPartitionLen,
+					    mPartitionLen, NULL, 0);
+		partOutputs[i] = cxvec_alloc(chunkLen + mResampLen,
+					     mResampLen, NULL, 0);
 	}
 
 	return true;
@@ -223,32 +220,32 @@ bool ChannelizerBase::init(struct cxvec **prot_filt)
  * channel rate may be higher or lower than the transceiver rate
  * depending on samples-per-symbol and channel bandwidth. 
  */
-ChannelizerBase::ChannelizerBase(int m, int chan_len, int resamp_len,
-				 int r_num, int r_den, int r_mul, chan_type type) 
-	: chan_m(m), chan_filt_len(chan_len), resmpl_filt_len(resamp_len),
-	  resmpl_rat_num(r_num), resmpl_rat_den(r_den), resmpl_rat_mul(r_mul)
+ChannelizerBase::ChannelizerBase(int wChanM, int wPartitionLen, int wResampLen,
+				 int wP, int wQ, int wMul, chanType type) 
+	: mChanM(wChanM), mPartitionLen(wPartitionLen), mResampLen(wResampLen),
+	  mP(wP), mQ(wQ), mMul(wMul)
 {
 	if (type == TX_SYNTHESIS)
-		chan_chnk = r_num * r_mul;
+		chunkLen = mP * mMul;
 	else
-		chan_chnk = r_den * r_mul;
+		chunkLen = mQ * mMul;
 }
 
 ChannelizerBase::~ChannelizerBase()
 {
 	int i;
 
-	release_chan_filt();
-	cxvec_free(fft_vec);
+	releaseFilters();
+	cxvec_free(fftBuffer);
 	free_fft();
 
-	for (i = 0; i < chan_m; i++) {
-		cxvec_free(part_in_vecs[i]);
-		cxvec_free(part_out_vecs[i]);
-		cxvec_free(hist_vecs[i]);
+	for (i = 0; i < mChanM; i++) {
+		cxvec_free(partInputs[i]);
+		cxvec_free(partOutputs[i]);
+		cxvec_free(history[i]);
 	}
 
-	free(part_in_vecs);
-	free(part_out_vecs);
-	free(hist_vecs);
+	free(partInputs);
+	free(partOutputs);
+	free(history);
 }
