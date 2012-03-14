@@ -18,8 +18,8 @@
  * See the COPYING file in the main directory for details.
  */
 
-#ifndef _DOWNSAMPLER_H_
-#define _DOWNSAMPLER_H_
+#ifndef _RESAMPLER_H_
+#define _RESAMPLER_H_
 
 #include "sigproc/sigproc.h"
 
@@ -82,4 +82,4 @@ public:
 	bool deactivateChan(int num);
 };
 
-#endif /* _DOWNSAMPLER_H_ */
+#endif /* _RESAMPLER_H_ */

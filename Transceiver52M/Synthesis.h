@@ -45,4 +45,4 @@ public:
 	int rotate(struct cxvec **in, struct cxvec *out);
 };
 
-#endif /* _CHANNELIZER_TX_H_ */
+#endif /* _SYNTHESIS_H_ */
