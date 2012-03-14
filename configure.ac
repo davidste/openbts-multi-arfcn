@@ -127,8 +127,10 @@ PKG_CHECK_MODULES(ORTP, ortp)
 # Defines LIBUSB_TRANSFER_CANCELLED, LIBUSB_TRANSFER_COMPLETED, LIBUSB_SUCCESS, LIBUSB_ERROR_*
 PKG_CHECK_MODULES(LIBUSB, libusb-1.0)
 
-# Defines FFTW_CFLAGS, FFTW_INCLUDEDIR, and FFTW_LIBS
+# Enable Multi-Channel
 PKG_CHECK_MODULES(FFTW, fftw3f)
+AC_DEFINE(MULTICHAN, 1, Define to 1 for multi-arfcn support)
+AM_CONDITIONAL(MULTICHAN, [true])
 
 # Prepends -lreadline to LIBS and defines HAVE_LIBREADLINE in config.h
 AC_CHECK_LIB(readline, readline)
