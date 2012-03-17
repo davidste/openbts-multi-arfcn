@@ -42,6 +42,9 @@ protected:
 	struct cxvec **history;
 	struct cxvec *fftBuffer;
 
+	/* Pointer to opaque FFT instance */
+	struct fft_hdl *fftHandle;
+
 	/* Output sample rate converter */
 	Resampler *mResampler;
 	int mResampLen;

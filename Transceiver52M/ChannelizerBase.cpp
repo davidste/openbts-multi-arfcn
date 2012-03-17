@@ -149,7 +149,7 @@ bool ChannelizerBase::deactivateChan(int num)
  */
 bool ChannelizerBase::init(struct cxvec **protoFilterBase)
 {
-	int i, rc;
+	int i;
 
 	/*
 	 * Filterbank coefficients, fft plan, history, and output sample
@@ -166,10 +166,9 @@ bool ChannelizerBase::init(struct cxvec **protoFilterBase)
 		return false;
 	}
 
-	rc = init_fft(0, mChanM);
-	if (rc < 0) {
+	fftHandle = init_fft(0, mChanM);
+	if (!fftHandle) {
 		LOG(ERR) << "Failed to initialize FFT";
-		return false;
 	}
 
 	mResampler = new Resampler(mP, mQ, mResampLen, mChanM);
@@ -237,7 +236,7 @@ ChannelizerBase::~ChannelizerBase()
 
 	releaseFilters();
 	cxvec_free(fftBuffer);
-	free_fft();
+	free_fft(fftHandle);
 
 	for (i = 0; i < mChanM; i++) {
 		cxvec_free(partInputs[i]);

@@ -71,7 +71,7 @@ int Synthesis::rotate(struct cxvec **in, struct cxvec *out)
 	 * Deinterleave back into filterbank partition input buffers
 	 */
 	cxvec_interlv(partInputs, fftBuffer, mChanM);
-	cxvec_fft(fftBuffer, fftBuffer);
+	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
 	cxvec_deinterlv_fw(fftBuffer, partInputs, mChanM);
 
 	/* 

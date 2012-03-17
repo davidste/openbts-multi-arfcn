@@ -28,11 +28,12 @@
 #include "sigvec.h"
 #include "fft.h"
 
-static fftwf_complex *fft_in;
-static fftwf_complex *fft_out;
-static fftwf_plan fft_plan;
-static int fft_len;
-static int init = 0;
+struct fft_hdl {
+	fftwf_complex *fft_in;
+	fftwf_complex *fft_out;
+	fftwf_plan fft_plan;
+	int fft_len;
+};
 
 /*! \brief Initialize FFT backend 
  *  \param[in] reverse FFT direction
@@ -40,33 +41,34 @@ static int init = 0;
  *
  * If the reverse is non-NULL, then an inverse FFT will be used.
  */
-int init_fft(int reverse, int m)
+struct fft_hdl *init_fft(int reverse, int m)
 {
+	struct fft_hdl *hdl = (struct fft_hdl *) malloc(sizeof(struct fft_hdl));
+	if (!hdl)
+		return NULL;
+
 	int direction = FFTW_FORWARD;
-
-	/* Only init once */
-	if (init)
-		return -1;
-
 	if (reverse)
 		direction = FFTW_BACKWARD;
 
-	fft_in = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
-	fft_out = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
-	fft_plan = fftwf_plan_dft_1d(m, fft_in, fft_out,
-				     direction, FFTW_MEASURE);
-	fft_len = m;
+	hdl->fft_in = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
+	hdl->fft_out = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
+	hdl->fft_plan = fftwf_plan_dft_1d(m, hdl->fft_in, hdl->fft_out,
+					  direction, FFTW_MEASURE);
+	hdl->fft_len = m;
 
-	return 0;
+	return hdl;
 }
 
 /*! \brief Free FFT backend resources 
  */
-void free_fft()
+void free_fft(struct fft_hdl *hdl)
 {
-	fftwf_destroy_plan(fft_plan);
-	fftwf_free(fft_in);
-	fftwf_free(fft_out);
+	fftwf_destroy_plan(hdl->fft_plan);
+	fftwf_free(hdl->fft_in);
+	fftwf_free(hdl->fft_out);
+
+	free(hdl);
 }
 
 /*! \brief Iteratively run the FFT on a complex vector 
@@ -76,9 +78,10 @@ void free_fft()
  * The input length must be a multiple of the FFT length. Note that output
  * length is not verified. There is a copy to and from FFTW aligned memory.
  */
-int cxvec_fft(struct cxvec *in, struct cxvec *out)
+int cxvec_fft(struct fft_hdl *hdl, struct cxvec *in, struct cxvec *out)
 {
 	int i;
+	int fft_len = hdl->fft_len;
 
 	if (in->len % fft_len) {
 		fprintf(stderr, "cxvec_fft: invalid input length\n");
@@ -88,9 +91,13 @@ int cxvec_fft(struct cxvec *in, struct cxvec *out)
 	}
 
 	for (i = 0; i < (in->len / fft_len); i++) {
-		memcpy(fft_in, &in->data[i * fft_len], fft_len * sizeof(cmplx));
-		fftwf_execute(fft_plan);
-		memcpy(&out->data[i * fft_len], fft_out, fft_len * sizeof(cmplx));
+		memcpy(hdl->fft_in,
+		       &in->data[i * fft_len], fft_len * sizeof(cmplx));
+
+		fftwf_execute(hdl->fft_plan);
+
+		memcpy(&out->data[i * fft_len],
+		       hdl->fft_out, fft_len * sizeof(cmplx));
 	}
 
 	return 0;
