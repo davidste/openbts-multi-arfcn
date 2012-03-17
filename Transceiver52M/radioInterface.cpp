@@ -33,7 +33,7 @@ RadioInterface::RadioInterface(RadioDevice *wRadio,
   : underrun(false), sendCursor(0), rcvCursor(0), mOn(false),
     mRadio(wRadio), receiveOffset(wReceiveOffset),
     samplesPerSymbol(wRadioOversampling), powerScaling(1.0),
-    loadTest(false)
+    loadTest(false), mAlignRadioServiceLoopThread(NULL)
 {
   int i;
 
@@ -52,6 +52,8 @@ RadioInterface::~RadioInterface(void)
     mRadio->stop();
     close();
  
+    delete mAlignRadioServiceLoopThread;
+
     for (i = 0; i < CHAN_M; i++) {
       if (rcvBuffer[i] != NULL)
         delete rcvBuffer[i];
@@ -138,15 +140,13 @@ bool RadioInterface::start()
     return false;
 
   LOG(INFO) << "starting radio interface...";
-  mAlignRadioServiceLoopThread.start((void * (*)(void*))AlignRadioServiceLoopAdapter,
-                                     (void*)this);
+  mOn = true;
+
+  mAlignRadioServiceLoopThread = new Thread(32768);
+  mAlignRadioServiceLoopThread->start((void * (*)(void*))AlignRadioServiceLoopAdapter,
+                                      (void*)this);
   writeTimestamp = mRadio->initialWriteTimestamp();
   readTimestamp = mRadio->initialReadTimestamp();
-  mRadio->start(); 
-  LOG(DEBUG) << "Radio started";
-  mRadio->updateAlignment(writeTimestamp-10000); 
-  mRadio->updateAlignment(writeTimestamp-10000);
-
   for (i = 0; i < CHAN_M; i++) {
     sendBuffer[i] = new float[8*2*INCHUNK];
     rcvBuffer[i] = new float[8*2*OUTCHUNK];
@@ -155,7 +155,10 @@ bool RadioInterface::start()
   /* Init I/O specific variables if applicable */ 
   init();
 
-  mOn = true;
+  mRadio->start(); 
+  LOG(DEBUG) << "Radio started";
+  mRadio->updateAlignment(writeTimestamp-10000); 
+  mRadio->updateAlignment(writeTimestamp-10000);
 
   return true;
 }
