@@ -90,6 +90,7 @@ public:
 
   /** start the interface */
   bool start();
+
   bool started() { return mOn; };
 
   /** shutdown interface */
@@ -112,9 +113,6 @@ public:
   /** check for underrun, resets underrun value */
   bool isUnderrun();
   
-  /** attach an existing USRP to this interface */
-  void attach(RadioDevice *wRadio, int wRadioOversampling);
-
   /** return the receive FIFO */
   VectorFIFO* receiveFIFO(int num) { return &mReceiveFIFO[num];}
 
