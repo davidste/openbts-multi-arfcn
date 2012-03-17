@@ -294,7 +294,7 @@ void GSMConfig::createCombination0(TransceiverManager& TRX, unsigned TN, unsigne
 
 void GSMConfig::createCombinationI(TransceiverManager& TRX, unsigned TN, unsigned ARFCN)
 {
-	LOG(ERR) << "Configuring combination I on TN " << TN << " ARFCN " << ARFCN;
+	LOG(NOTICE) << "Configuring combination I on TN " << TN << " ARFCN " << ARFCN;
 	ARFCNManager *radio = TRX.ARFCN(ARFCN);
 	radio->setSlot(TN,1);
 	TCHFACCHLogicalChannel* chan = new TCHFACCHLogicalChannel(TN,gTCHF_T[TN]);
