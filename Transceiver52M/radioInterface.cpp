@@ -273,14 +273,6 @@ bool RadioInterface::isUnderrun()
   return retVal;
 }
 
-void RadioInterface::attach(RadioDevice *wRadio, int wRadioOversampling)
-{
-  if (!mOn) {
-    mRadio = wRadio;
-    mRadioOversampling = SAMPSPERSYM;
-  }
-}
-
 double RadioInterface::setRxGain(double dB)
 {
   if (mRadio)
