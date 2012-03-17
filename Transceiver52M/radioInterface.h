@@ -90,6 +90,7 @@ public:
 
   /** start the interface */
   bool start();
+  bool stop();
 
   bool started() { return mOn; };
 
@@ -164,6 +165,9 @@ protected:
 
   /** reset the interface */
   void reset();
+
+  /** interface status */
+  bool on() { return mOn; }
 
   friend void *AlignRadioServiceLoopAdapter(RadioInterface*);
 

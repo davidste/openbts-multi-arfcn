@@ -73,6 +73,7 @@ Transceiver::Transceiver(int wBasePort,
   }
 
   mOn = false;
+  mRunning = false;
   mTxFreq = 0.0;
   mRxFreq = 0.0;
   mPower = -10;
@@ -316,8 +317,15 @@ void Transceiver::pullFIFO()
 
 void Transceiver::start()
 {
+  mRunning = true;
   mControlServiceLoopThread = new Thread(32768);
   mControlServiceLoopThread->start((void * (*)(void*))ControlServiceLoopAdapter,(void*) this);
+}
+
+void Transceiver::shutdown()
+{
+  mOn = false;
+  mRunning = false;
 }
 
 void Transceiver::reset()
@@ -335,10 +343,19 @@ void Transceiver::driveControl()
   char buffer[MAX_PACKET_LENGTH];
   int msgLen = -1;
   buffer[0] = '\0';
- 
-  msgLen = mControlSocket.read(buffer);
 
-  if (msgLen < 1) {
+  try { 
+    msgLen = mControlSocket.read(buffer);
+    if (msgLen < 1) {
+      return;
+    }
+  } catch (...) {
+    /* Ignore the read exception on shutdown */
+    if (!mRunning) {
+      return;
+    }
+
+    LOG(ALERT) << "Caught UHD socket exception";
     return;
   }
 
@@ -507,14 +524,24 @@ void Transceiver::driveControl()
 
 bool Transceiver::driveTransmitPriorityQueue() 
 {
-
   char buffer[gSlotLen+50];
 
-  // check data socket
-  size_t msgLen = mDataSocket.read(buffer);
+  if (!mOn)
+    return true;
 
-  if (msgLen!=gSlotLen+1+4+1) {
-    LOG(ERR) << "badly formatted packet on GSM->TRX interface";
+  try { 
+    size_t msgLen = mDataSocket.read(buffer);
+    if (msgLen!=gSlotLen+1+4+1) {
+      LOG(ERR) << "badly formatted packet on GSM->TRX interface";
+      return false;
+    }
+  } catch (...) {
+    if (!mOn) {
+      /* Shutdown condition. End the thread. */
+      return true;
+    }
+
+    LOG(ALERT) << "Caught UHD socket exception";
     return false;
   }
 
@@ -585,7 +612,7 @@ void Transceiver::writeClockInterface()
 
 void *FIFOServiceLoopAdapter(Transceiver *transceiver)
 {
-  while (1) {
+  while (transceiver->on()) {
     transceiver->pullFIFO();
     pthread_testcancel();
   }
@@ -594,7 +621,7 @@ void *FIFOServiceLoopAdapter(Transceiver *transceiver)
 
 void *ControlServiceLoopAdapter(Transceiver *transceiver)
 {
-  while (1) {
+  while (transceiver->running()) {
     transceiver->driveControl();
     pthread_testcancel();
   }
@@ -603,7 +630,7 @@ void *ControlServiceLoopAdapter(Transceiver *transceiver)
 
 void *TransmitPriorityQueueServiceLoopAdapter(Transceiver *transceiver)
 {
-  while (1) {
+  while (transceiver->on()) {
     bool stale = false;
     // Flush the UDP packets until a successful transfer.
     while (!transceiver->driveTransmitPriorityQueue()) {
