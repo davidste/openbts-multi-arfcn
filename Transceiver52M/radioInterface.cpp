@@ -48,13 +48,16 @@ RadioInterface::~RadioInterface(void)
 {
   int i;
 
-  close();
-
-  for (i = 0; i < CHAN_M; i++) {
-    if (rcvBuffer[i] != NULL)
-      delete rcvBuffer[i];
-    if (sendBuffer[i] != NULL)
-      delete sendBuffer[i];
+  if (mOn) {
+    mRadio->stop();
+    close();
+ 
+    for (i = 0; i < CHAN_M; i++) {
+      if (rcvBuffer[i] != NULL)
+        delete rcvBuffer[i];
+      if (sendBuffer[i] != NULL)
+        delete sendBuffer[i];
+    }
   }
 }
 
