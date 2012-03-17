@@ -85,7 +85,7 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	 * Deinterleave back into partition output buffers
 	 */
 	cxvec_interlv(partOutputs, fftBuffer, mChanM);
-	cxvec_fft(fftBuffer, fftBuffer);
+	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
 	cxvec_deinterlv_fw(fftBuffer, partOutputs, mChanM);
 
 	/* 

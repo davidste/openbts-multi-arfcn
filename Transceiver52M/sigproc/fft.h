@@ -23,9 +23,10 @@
 #ifndef _FFT_H_
 #define _FFT_H_
 
-int init_fft(int reverse, int m);
-void free_fft();
+struct fft_hdl;
 
-int cxvec_fft(struct cxvec *in, struct cxvec *out);
+struct fft_hdl *init_fft(int reverse, int m);
+void free_fft(struct fft_hdl *hdl);
+int cxvec_fft(struct fft_hdl *hdl, struct cxvec *in, struct cxvec *out);
 
 #endif /* _FFT_H_ */
