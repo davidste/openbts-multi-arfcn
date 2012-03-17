@@ -105,7 +105,7 @@ void Resampler::releaseFilters()
 {
 	int i;
 
-	for (i = 0; i < mQ; i++) {
+	for (i = 0; i < mP; i++) {
 		cxvec_free(partitions[i]);
 	}
 
