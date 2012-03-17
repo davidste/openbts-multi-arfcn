@@ -33,6 +33,8 @@ class RadioDevice {
   static RadioDevice *make(double desiredSampleRate,
 			   double offset, bool skipRx = false);
 
+  virtual ~RadioDevice() {};
+
   /** Initialize the USRP */
   virtual bool open()=0;
 
@@ -123,7 +125,6 @@ class RadioDevice {
   virtual double getSampleRate()=0;
   virtual double numberRead()=0;
   virtual double numberWritten()=0;
-
 };
 
 #endif
