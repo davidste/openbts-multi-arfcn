@@ -62,7 +62,7 @@ Transceiver::Transceiver(int wBasePort,
 
   mSamplesPerSymbol = wSamplesPerSymbol;
   mRadioInterface = wRadioInterface;
-  mLastClockUpdateTime = GSM::Time(0, 0); 
+  mLastClockUpdateTime = mDriveLoop->getStartTime();
   mMaxExpectedDelay = 0;
 
   mTransmitDeadlineClock = wDriveLoop->deadlineClock();
@@ -79,7 +79,7 @@ Transceiver::Transceiver(int wBasePort,
     channelResponse[i] = NULL;
     DFEForward[i] = NULL;
     DFEFeedback[i] = NULL;
-    channelEstimateTime[i] = GSM::Time(0, 0);
+    channelEstimateTime[i] = mDriveLoop->getStartTime();
   }
 
   mOn = false;
@@ -88,7 +88,7 @@ Transceiver::Transceiver(int wBasePort,
   mRxFreq = 0.0;
   mPower = -10;
   mEnergyThreshold = 5.0; // based on empirical data
-  prevFalseDetectionTime = GSM::Time(0, 0);
+  prevFalseDetectionTime = mDriveLoop->getStartTime();
 
   mRadioLocked = mRadioInterface->started();
 }
