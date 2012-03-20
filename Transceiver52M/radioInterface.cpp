@@ -111,11 +111,12 @@ int RadioInterface::unRadioifyVector(float *floatVector, int offset,
 				     signalVector &newVector)
 {
   int i;
+  double scale = mRadio->fullScaleOutputValue();
   signalVector::iterator itr = newVector.begin();
 
   for (i = 0; i < newVector.size(); i++) {
-    *itr++ = Complex<float>(floatVector[offset + 2 * i + 0],
-			    floatVector[offset + 2 * i + 1]);
+    *itr++ = Complex<float>(floatVector[offset + 2 * i + 0] * scale,
+			    floatVector[offset + 2 * i + 1] * scale);
   }
 
   return newVector.size();
