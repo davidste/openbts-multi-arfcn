@@ -162,7 +162,7 @@ public:
 	inline TIMESTAMP initialReadTimestamp() { return 0; }
 
 	inline double fullScaleInputValue() { return 1.0f * tx_ampl; }
-	inline double fullScaleOutputValue() { return 1.0f; }
+	inline double fullScaleOutputValue() { return 9450.0f; }
 
 	double setRxGain(double db);
 	double getRxGain(void) { return rx_gain; }
