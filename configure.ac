@@ -57,19 +57,9 @@ AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(usrp1, [
-    AS_HELP_STRING([--with-usrp1],
-        [enable USRP1 gnuradio based transceiver])
-])
-
 AC_ARG_WITH(uhd, [
     AS_HELP_STRING([--with-uhd],
         [enable UHD based transceiver])
-])
-
-AC_ARG_WITH(singledb, [
-    AS_HELP_STRING([--with-singledb],
-        [enable single daughterboard use on USRP1])
 ])
 
 AC_ARG_WITH(resamp, [
@@ -80,21 +70,6 @@ AC_ARG_WITH(resamp, [
 AC_ARG_WITH(extref, [
     AS_HELP_STRING([--with-extref],
         [enable external reference on UHD devices])
-])
-
-AS_IF([test "x$with_usrp1" = "xyes"], [
-    # Defines USRP_CFLAGS, USRP_INCLUDEDIR, and USRP_LIBS
-    PKG_CHECK_MODULES(USRP, usrp > 3.1)
-    # Check whether we have libusrp >= 3.2
-    PKG_CHECK_EXISTS(usrp >= 3.2, libusrp_3_2=yes, libusrp_3_2=no)
-    if test "x$libusrp_3_2" = "xyes";then
-        AC_DEFINE(HAVE_LIBUSRP_3_2, 1, Define to 1 if you have libusrp >= 3.2)
-    fi
-    # Check whether we have libusrp >= 3.3
-    PKG_CHECK_EXISTS(usrp >= 3.3, libusrp_3_3=yes, libusrp_3_3=no)
-    if test "x$libusrp_3_3" = "xyes";then
-        AC_DEFINE(HAVE_LIBUSRP_3_3, 1, Define to 1 if you have libusrp >= 3.3)
-    fi
 ])
 
 AS_IF([test "x$with_uhd" = "xyes"],[
@@ -110,13 +85,9 @@ AS_IF([test "x$with_extref" = "xyes"], [
     AC_DEFINE(EXTREF, 1, Define to 1 for external reference)
 ])
 
-AS_IF([test "x$with_singledb" = "xyes"], [
-    AC_DEFINE(SINGLEDB, 1, Define to 1 for single daughterboard)
-])
-
 AM_CONDITIONAL(RESAMPLE, [test "x$with_resamp" = "xyes"])
 AM_CONDITIONAL(UHD, [test "x$with_uhd" = "xyes"])
-AM_CONDITIONAL(USRP1, [test "x$with_usrp1" = "xyes"])
+AM_CONDITIONAL(USRP1, [false])
 
 # Defines OSIP_CFLAGS, OSIP_INCLUDEDIR, and OSIP_LIBS
 PKG_CHECK_MODULES(OSIP, libosip2)
