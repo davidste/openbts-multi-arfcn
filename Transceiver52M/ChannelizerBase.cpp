@@ -102,7 +102,7 @@ bool ChannelizerBase::initFilters(struct cxvec **protoFilter)
 	}
 
 	for (i = 0; i < m; i++) {
-		cxvec_rvrs_conj(partitions[i], partitions[i]);
+		cxvec_rvrs(partitions[i], partitions[i]);
 	}
 
 	/*

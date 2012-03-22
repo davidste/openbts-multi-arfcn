@@ -80,7 +80,7 @@ bool Resampler::initFilters(struct cxvec **protoFilter)
 	}
 
 	for (i = 0; i < mP; i++) {
-		cxvec_rvrs_conj(partitions[i], partitions[i]);
+		cxvec_rvrs(partitions[i], partitions[i]);
 	}
 
 	/*
