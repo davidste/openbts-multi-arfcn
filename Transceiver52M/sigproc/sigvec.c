@@ -170,18 +170,18 @@ int cxvec_interlv(struct cxvec **in, struct cxvec *out, int m)
 	return i;
 }
 
-/*! \brief Reverse and complex conjugate a complex vector
+/*! \brief Reverse a complex vector
  *  \param[in] in Complex input vector
  *  \param[out] out Complex output vector pointers
  */
-int cxvec_rvrs_conj(struct cxvec *in, struct cxvec *out)
+int cxvec_rvrs(struct cxvec *in, struct cxvec *out)
 {
 	int i;
 	struct cxvec *rev = cxvec_alloc(in->len, 0, NULL, 0);
 
 	for (i = 0; i < in->len; i++) {
 		rev->data[i].real = in->data[in->len - 1 - i].real;
-		rev->data[i].imag = -in->data[in->len - 1 - i].imag;
+		rev->data[i].imag = in->data[in->len - 1 - i].imag;
 	}
 
 	memcpy(out->data, rev->data, in->len * sizeof(cmplx));

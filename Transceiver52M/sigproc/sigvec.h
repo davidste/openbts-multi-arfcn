@@ -55,7 +55,7 @@ enum cxvec_conv_type {
 struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags);
 void cxvec_free(struct cxvec *vec);
 void cxvec_reset(struct cxvec *vec);
-int cxvec_rvrs_conj(struct cxvec *in, struct cxvec *out);
+int cxvec_rvrs(struct cxvec *in, struct cxvec *out);
 int cxvec_cp(struct cxvec *dst, struct cxvec *src);
 int cxvec_sub(struct cxvec *a, struct cxvec *b, struct cxvec *out);
 int cxvec_decim(struct cxvec *in, struct cxvec *out, int idx, int decim);
