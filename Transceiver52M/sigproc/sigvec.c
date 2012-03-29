@@ -320,48 +320,6 @@ int cxvec_decim(struct cxvec *in, struct cxvec *out, int idx, int decim)
 	return (in->len / decim);
 }
 
-/*! \brief Shift the index of a complex vector based on convolution type
- *  \param[in] vec Complex input vector
- *  \param[in] h Complex vector (filter) to be convolved against
- *  \param[in] type Convolution span type
- *
- * Modify the index of a complex vector such that output of convolution
- * with another vector matches the desired convolution span type. Use with
- * caution.
- */
-int cxvec_shft(struct cxvec *vec, struct cxvec *h, enum cxvec_conv_type type)
-{
-	int shft;
-
-	switch (type) {
-	case CONV_FULL_SPAN:
-		shft = 0;
-		break;
-	case CONV_NO_DELAY:
-		shft = h->len / 2;
-		break;
-	case CONV_OVERLAP_ONLY:
-	default:
-		fprintf(stderr, "cxvec_shft: Unsupported convolution type\n");
-		return -1;
-	}
-
-	if ((vec->start_idx + shft) < (h->len - 1)) {
-		fprintf(stderr, "cxvec_center: insufficent headroom to filter\n");
-		return -1;
-	}
-
-	if ((vec->start_idx + shft) > (vec->buf_len)) {
-		fprintf(stderr, "cxvec_center: insufficent buffer length to filter\n");
-		return -1;
-	}
-
-	vec->start_idx += shft;
-	vec->data = &vec->buf[vec->start_idx];
-
-	return shft;
-}
-
 float cxvec_sinc(float x)
 {
 	if (x == 0.0f)
