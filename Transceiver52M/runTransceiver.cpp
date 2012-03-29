@@ -86,8 +86,6 @@ int main(int argc, char *argv[])
   RadioInterface* radio = new RadioInterface(usrp,3,SAMPSPERSYM,0,false);
   DriveLoop *drive = new DriveLoop(SAMPSPERSYM,GSM::Time(3,0),radio);
   Transceiver *trx = new Transceiver(5700,"127.0.0.1",SAMPSPERSYM,radio,drive, 0);
-  trx->receiveFIFO(radio->receiveFIFO(0));
-  trx->transmitQueue(drive->priorityQueue(0));
   radio->activateChan(0);
 
 /*
