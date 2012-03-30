@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
 		LOG(ALERT) << "Rx burst timing may not be accurate"; 
 	}
 
-	usrp = RadioDevice::make(DEVICE_RATE, rxOffset);
+	usrp = RadioDevice::make(DEVICE_RATE, rxOffset, DEVICE_TX_AMPL / numARFCN);
 	if (!usrp->open()) {
 		LOG(ALERT) << "Failed to open device, exiting...";
 		return EXIT_FAILURE;
