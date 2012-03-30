@@ -46,6 +46,7 @@
 #endif
 
 #define DEVICE_RATE		(CHAN_M * CHAN_RATE)
+#define DEVICE_TX_AMPL		0.5
 
 double getRadioOffset(int numChans = CHAN_M,
 		      double chanRate = CHAN_RATE,

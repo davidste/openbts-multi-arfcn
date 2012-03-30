@@ -31,7 +31,8 @@ class RadioDevice {
   enum busType { USB, NET };
 
   static RadioDevice *make(double desiredSampleRate,
-			   double offset, bool skipRx = false);
+			   double offset, double ampl = 0.5,
+			   bool skipRx = false);
 
   virtual ~RadioDevice() {};
 

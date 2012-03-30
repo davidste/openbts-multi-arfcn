@@ -40,12 +40,9 @@
                         enabled and only relevent to 64 MHz default clocks
 
     smpl_buf_sz       - The receive sample buffer size in bytes.
-
-    tx_ampl           - Transmit amplitude must be between 0 and 1.0
 */
 const double master_clk_rt = 52e6;
 const size_t smpl_buf_sz = (1 << 20);
-const float tx_ampl = .3;
 
 /** Timestamp conversion
     @param timestamp a UHD or OpenBTS timestamp
@@ -137,7 +134,7 @@ private:
 */
 class uhd_device : public RadioDevice {
 public:
-	uhd_device(double rate, double offset, bool skip_rx);
+	uhd_device(double rate, double offset, double ampl, bool skip_rx);
 	~uhd_device();
 
 	bool open();
@@ -198,6 +195,7 @@ private:
 
 	double desired_smpl_rt, actual_smpl_rt;
 
+	double tx_ampl;
 	double tx_gain, tx_gain_min, tx_gain_max;
 	double rx_gain, rx_gain_min, rx_gain_max;
 
@@ -259,8 +257,8 @@ void uhd_msg_handler(uhd::msg::type_t type, const std::string &msg)
 	}
 }
 
-uhd_device::uhd_device(double rate, double offset, bool skip_rx)
-	: desired_smpl_rt(rate), actual_smpl_rt(0),
+uhd_device::uhd_device(double rate, double offset, double ampl, bool skip_rx)
+	: desired_smpl_rt(rate), actual_smpl_rt(0), tx_ampl(ampl),
 	  tx_gain(0.0), tx_gain_min(0.0), tx_gain_max(0.0),
 	  rx_gain(0.0), rx_gain_min(0.0), rx_gain_max(0.0),
 	  tx_freq(0.0), rx_freq(0.0), tx_spp(0), rx_spp(0),
@@ -982,7 +980,8 @@ std::string smpl_buf::str_code(ssize_t code)
 	}
 }
 
-RadioDevice *RadioDevice::make(double smpl_rt, double offset, bool skip_rx)
+RadioDevice *RadioDevice::make(double smpl_rt, double offset,
+			       double ampl, bool skip_rx)
 {
-	return new uhd_device(smpl_rt, offset, skip_rx);
+	return new uhd_device(smpl_rt, offset, ampl, skip_rx);
 }
