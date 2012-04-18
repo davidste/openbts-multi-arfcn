@@ -59,7 +59,8 @@ const dboardConfigType dboardConfig = TXA_RXB;
 
 const double USRPDevice::masterClockRate = 52.0e6;
 
-USRPDevice::USRPDevice (double _desiredSampleRate, bool skipRx)
+USRPDevice::USRPDevice(double _desiredSampleRate,
+                       double offset, double ampl, bool skipRx)
   : skipRx(skipRx)
 {
   LOG(INFO) << "creating USRP device...";
@@ -86,6 +87,8 @@ bool USRPDevice::open()
   m_uRx.reset();
   if (!skipRx) {
   try {
+    std::cout << "Opening " << rbf << " with decimation of " << decimRate << std::endl;
+
     m_uRx = usrp_standard_rx_sptr(usrp_standard_rx::make(0,decimRate,1,-1,
                                                          usrp_standard_rx::FPGA_MODE_NORMAL,
                                                          1024,16*8,rbf));
@@ -287,15 +290,30 @@ double USRPDevice::setRxGain(double dB) {
 }
 
 
+void convertSamples(short *shortBuf, int len, float scale)
+{
+  float *floatBuf = new float[len*2];
+
+  for (int i = 0; i < len*2; i++) {
+	floatBuf[i] = (float) usrp_to_host_short(shortBuf[i]);
+  }
+
+  memcpy(shortBuf, floatBuf, len * 2 * sizeof(float));
+
+  delete[] floatBuf;
+}
+
 // NOTE: Assumes sequential reads
-int USRPDevice::readSamples(short *buf, int len, bool *overrun, 
+int USRPDevice::readSamples(float *floatBuf, int len, bool *overrun, 
 			    TIMESTAMP timestamp,
 			    bool *underrun,
 			    unsigned *RSSI) 
 {
 #ifndef SWLOOPBACK 
   if (!m_uRx) return 0;
-  
+ 
+  short *buf = (short *) floatBuf;
+ 
   timestamp += timestampOffset;
   
   if (timestamp + len < timeStart) {
@@ -399,6 +417,8 @@ int USRPDevice::readSamples(short *buf, int len, bool *overrun,
   dataStart = (bufStart + len) % (currDataSize/2);
   timeStart = timestamp + len;
 
+  convertSamples(buf, len, fullScaleOutputValue());
+
   return len;
   
 #else
@@ -437,20 +457,32 @@ int USRPDevice::readSamples(short *buf, int len, bool *overrun,
 #endif
 }
 
-int USRPDevice::writeSamples(short *buf, int len, bool *underrun, 
+static short *convertSamples(float *floatBuf, int len)
+{
+  short *shortBuf = (short *) floatBuf;
+
+  for (int i = 0; i < len*2; i++) {
+	shortBuf[i] = host_to_usrp_short((short) (floatBuf[i]));
+  }
+
+  return shortBuf;
+}
+
+int USRPDevice::writeSamples(float *buf, int len, bool *underrun, 
 			     unsigned long long timestamp,
-			     bool isControl) 
+			     bool isControl)
 {
   writeLock.lock();
 
 #ifndef SWLOOPBACK 
   if (!m_uTx) return 0;
  
-  static uint32_t outData[128*20];
- 
-  for (int i = 0; i < len*2; i++) {
-	buf[i] = host_to_usrp_short(buf[i]);
-  }
+  short *shortBuf = NULL; 
+
+  if (!isControl) shortBuf = convertSamples(buf, len);
+  else shortBuf = (short *) buf;
+
+  static uint32_t outData[128*80];
 
   int numWritten = 0;
   unsigned isStart = 1;
@@ -468,7 +500,7 @@ int USRPDevice::writeSamples(short *buf, int len, bool *underrun,
     unsigned payloadLen = ((len - numWritten) < 504) ? (len-numWritten) : 504;
     pkt[0] = (isStart << 12 | isEnd << 11 | (RSSI & 0x3f) << 5 | CHAN) << 16 | payloadLen;
     pkt[1] = timestamp & 0x0ffffffffll;
-    memcpy(pkt+2,buf+(numWritten/sizeof(short)),payloadLen);
+    memcpy(pkt+2,shortBuf+(numWritten/sizeof(short)),payloadLen);
     numWritten += payloadLen;
     timestamp += payloadLen/2/sizeof(short);
     isStart = 0;
@@ -484,7 +516,7 @@ int USRPDevice::writeSamples(short *buf, int len, bool *underrun,
   return len/2/sizeof(short);
 #else
   int retVal = len;
-  memcpy(loopbackBuffer+loopbackBufferSize,buf,sizeof(short)*2*len);
+  memcpy(loopbackBuffer+loopbackBufferSize,shortBuf,sizeof(short)*2*len);
   samplesWritten += retVal;
   loopbackBufferSize += retVal*2;
    
@@ -499,7 +531,7 @@ bool USRPDevice::updateAlignment(TIMESTAMP timestamp)
   uint32_t *wordPtr = (uint32_t *) data;
   *wordPtr = host_to_usrp_u32(*wordPtr);
   bool tmpUnderrun;
-  if (writeSamples((short *) data,1,&tmpUnderrun,timestamp & 0x0ffffffffll,true)) {
+  if (writeSamples((float *) data,1,&tmpUnderrun,timestamp & 0x0ffffffffll,true)) {
     pingTimestamp = timestamp;
     return true;
   }
@@ -556,7 +588,8 @@ bool USRPDevice::setTxFreq(double wFreq) { return true;};
 bool USRPDevice::setRxFreq(double wFreq) { return true;};
 #endif
 
-RadioDevice *RadioDevice::make(double desiredSampleRate, bool skipRx)
+RadioDevice *RadioDevice::make(double desiredSampleRate,
+                               double offset, double ampl, bool skipRx)
 {
-	return new USRPDevice(desiredSampleRate, skipRx);
+	return new USRPDevice(desiredSampleRate, offset, ampl, skipRx);
 }

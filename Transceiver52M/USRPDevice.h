@@ -112,7 +112,8 @@ private:
  public:
 
   /** Object constructor */
-  USRPDevice (double _desiredSampleRate, bool skipRx);
+  USRPDevice(double _desiredSampleRate,
+             double offset, double ampl, bool skipRx);
 
   /** Instantiate the USRP */
   bool open(); 
@@ -139,7 +140,7 @@ private:
 	@param RSSI The received signal strength of the read result
 	@return The number of samples actually read
   */
-  int  readSamples(short *buf, int len, bool *overrun, 
+  int  readSamples(float *buf, int len, bool *overrun, 
 		   TIMESTAMP timestamp = 0xffffffff,
 		   bool *underrun = NULL,
 		   unsigned *RSSI = NULL);
@@ -152,10 +153,10 @@ private:
         @param isControl Set if data is a control packet, e.g. a ping command
         @return The number of samples actually written
   */
-  int  writeSamples(short *buf, int len, bool *underrun, 
+  int  writeSamples(float *buf, int len, bool *underrun, 
 		    TIMESTAMP timestamp = 0xffffffff,
 		    bool isControl = false);
- 
+
   /** Update the alignment between the read and write timestamps */
   bool updateAlignment(TIMESTAMP timestamp);
   
