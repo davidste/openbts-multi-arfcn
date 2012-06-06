@@ -31,19 +31,20 @@ class RadioInterface {
 
 private:
 
+  int mChanM;                                 ///< channelizer width
   Thread *mAlignRadioServiceLoopThread;	      ///< thread that synchronizes transmit and receive sections
 
-  VectorFIFO mReceiveFIFO[CHAN_M];	      ///< FIFO that holds receive  bursts
+  VectorFIFO mReceiveFIFO[CHAN_MAX];	      ///< FIFO that holds receive  bursts
 
   RadioDevice *mRadio;			      ///< the USRP object
  
-  float *sendBuffer[CHAN_M];
+  float *sendBuffer[CHAN_MAX];
   unsigned sendCursor;
 
-  float *rcvBuffer[CHAN_M];
+  float *rcvBuffer[CHAN_MAX];
   unsigned rcvCursor;
 
-  bool chanActive[CHAN_M];
+  bool chanActive[CHAN_MAX];
  
   bool underrun;			      ///< indicates writes to USRP are too slow
   bool overrun;				      ///< indicates reads from USRP are too slow
@@ -99,6 +100,7 @@ public:
 
   /** constructor */
   RadioInterface(RadioDevice* wRadio = NULL,
+		 int wChanM = 1,
 		 int receiveOffset = 3,
 		 int wRadioOversampling = SAMPSPERSYM,
 		 int wTransceiverOversampling = SAMPSPERSYM,
