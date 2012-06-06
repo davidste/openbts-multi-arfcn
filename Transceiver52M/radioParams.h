@@ -23,11 +23,13 @@
 
 #include "config.h"
 
+/* Device settings */
+#define DEVICE_TX_AMPL		0.5
 #define SAMPSPERSYM		1
 #define GSM_RATE		(1625e3 / 6)
 
-/* Channel settings */
-#define CHAN_M			5
+/* Channelizer settings */
+#define CHAN_MAX		10
 #define CHAN_RATE		400e3
 #define CHAN_FILT_LEN		16
 
@@ -37,18 +39,13 @@
 #define RESAMP_FILT_LEN		8
 
 #ifndef MULTICHAN
-#  undef CHAN_M
-#  define CHAN_M		1
 #  ifndef RESAMPLE
 #    undef CHAN_RATE
 #    define CHAN_RATE		GSM_RATE
 #  endif
 #endif
 
-#define DEVICE_RATE		(CHAN_M * CHAN_RATE)
-#define DEVICE_TX_AMPL		0.5
-
-double getRadioOffset(int numChans = CHAN_M,
+double getRadioOffset(int chanM,
 		      double chanRate = CHAN_RATE,
 		      int sps = SAMPSPERSYM,
 		      int resampFiltLen = RESAMP_FILT_LEN,
