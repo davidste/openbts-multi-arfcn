@@ -49,7 +49,6 @@ private:
 
   UDPSocket mDataSocket;	  ///< socket for writing to/reading from GSM core
   UDPSocket mControlSocket;	  ///< socket for writing/reading control commands from GSM core
-  UDPSocket mClockSocket;	  ///< socket for writing clock updates to GSM core
 
   VectorQueue  *mTransmitPriorityQueue;   ///< priority queue of transmit bursts received from GSM core
   VectorFIFO*  mReceiveFIFO;      ///< radioInterface FIFO of receive bursts 
@@ -59,9 +58,6 @@ private:
   Thread *mTransmitPriorityQueueServiceLoopThread;///< thread to process transmit bursts from GSM core
 
   int mChannel;                           ///< channelizer attach number between 0 and 'M-1'
-
-  GSM::Time *mTransmitDeadlineClock;      ///< deadline for pushing bursts into transmit FIFO 
-  GSM::Time mLastClockUpdateTime;         ///< last time clock update was sent up to core
 
   RadioInterface *mRadioInterface;	  ///< associated radioInterface object
   double txFullScale;                     ///< full scale input to radio
@@ -96,10 +92,11 @@ private:
 
   bool mOn;			       ///< flag to indicate that transceiver is powered on
   bool mRunning;                       ///< flag to indicate control loop is running
+  bool mPrimary;                       ///< flag to indicate C0 channel 
   double mTxFreq;                      ///< the transmit frequency
   double mRxFreq;                      ///< the receive frequency
+  double mFreqOffset;                  ///< RF frequency offset
   int mPower;                          ///< the transmit power in dB
-  unsigned mTSC;                       ///< the midamble sequence code
   double mEnergyThreshold;             ///< threshold to determine if received data is potentially a GSM burst
   GSM::Time prevFalseDetectionTime;    ///< last timestamp of a false energy detection
   unsigned mMaxExpectedDelay;            ///< maximum expected time-of-arrival offset in GSM symbols
@@ -112,7 +109,7 @@ private:
   float        chanRespOffset[8];      ///< most recent timing offset, e.g. TOA, of all timeslots
   complex      chanRespAmplitude[8];   ///< most recent channel amplitude of all timeslots
 
-  bool         mRadioLocked;
+  static int mTSC;                     ///< the midamble sequence code
 
 public:
 
@@ -128,7 +125,7 @@ public:
 	      int wSamplesPerSymbol,
 	      RadioInterface *wRadioInterface,
 	      DriveLoop *wDriveLoop,
-	      int wChannel);
+	      int wChannel, bool wPrimary);
   /** Destructor */
   ~Transceiver();
 
@@ -169,9 +166,11 @@ protected:
   /** return control loop operational status */ 
   bool running() { return mRunning; }
 
+  /** return the drive loop pointer */
+  DriveLoop *getDriveLoop() { return mDriveLoop; }
+  
   /** set priority on current thread */
   void setPriority() { mRadioInterface->setPriority(); }
-
 };
 
 /** FIFO thread loop */
@@ -182,4 +181,3 @@ void *ControlServiceLoopAdapter(Transceiver *);
 
 /** transmit queueing thread loop */
 void *TransmitPriorityQueueServiceLoopAdapter(Transceiver *);
-

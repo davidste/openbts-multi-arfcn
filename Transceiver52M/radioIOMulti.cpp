@@ -36,15 +36,15 @@
 /* Channelizer parameters */
 #define CHUNKMUL		9
 #define INCHUNK			(RESAMP_INRATE * CHUNKMUL)
+#define OUTCHUNK		(RESAMP_OUTRATE * CHUNKMUL)
 #define INBUFLEN		(INCHUNK * 4)
-#define OUTCHUNK		(RESAMP_OUTRATE * CHUNKMUL * CHAN_M)
 #define OUTBUFLEN		(OUTCHUNK * 4)
 
 static struct cxvec *highRateTxBuf;
 static struct cxvec *highRateRxBuf;
 
-static struct cxvec *lowRateTxBufs[CHAN_M];
-static struct cxvec *lowRateRxBufs[CHAN_M];
+static struct cxvec *lowRateTxBufs[CHAN_MAX];
+static struct cxvec *lowRateRxBufs[CHAN_MAX];
 
 static Channelizer *chan;
 static Synthesis *synth;
@@ -54,22 +54,22 @@ bool RadioInterface::init()
 {
 	int i;
 
-	chan = new Channelizer(CHAN_M, CHAN_FILT_LEN, RESAMP_FILT_LEN,
+	chan = new Channelizer(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
 			       RESAMP_INRATE, RESAMP_OUTRATE, CHUNKMUL);
 	if (!chan->init(NULL)) {
 		LOG(ALERT) << "Rx channelizer failed to initialize";
 		return false;
 	}
 
-	synth = new Synthesis(CHAN_M, CHAN_FILT_LEN, RESAMP_FILT_LEN,
+	synth = new Synthesis(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
 			      RESAMP_OUTRATE, RESAMP_INRATE, CHUNKMUL);
 	if (!synth->init(NULL)) {
 		LOG(ALERT) << "Tx channelizer failed to initialize";
 		return false;
 	}
 
-	highRateTxBuf = cxvec_alloc(OUTBUFLEN, 0, NULL, 0);
-	highRateRxBuf = cxvec_alloc(OUTBUFLEN, 0, NULL, 0);
+	highRateTxBuf = cxvec_alloc(OUTBUFLEN * mChanM, 0, NULL, 0);
+	highRateRxBuf = cxvec_alloc(OUTBUFLEN * mChanM, 0, NULL, 0);
 
 	/*
 	 * Setup per-channel variables. The low rate transmit vectors 
@@ -77,7 +77,7 @@ bool RadioInterface::init()
 	 * and requires headroom equivalent to the filter length. Low
 	 * rate buffers are allocated in the main radio interface code.
 	 */
-	for (i = 0; i < CHAN_M; i++) {
+	for (i = 0; i < mChanM; i++) {
 		if (chanActive[i]) {
 			chan->activateChan(i);
 			synth->activateChan(i);
@@ -100,7 +100,7 @@ void RadioInterface::close()
 	cxvec_free(highRateRxBuf);
 
 	/* Don't deallocate class member buffers */
-	for (i = 0; i < CHAN_M; i ++) {
+	for (i = 0; i < mChanM; i ++) {
 		lowRateRxBufs[i]->buf = NULL;
 		lowRateTxBufs[i]->buf = NULL;
 
@@ -120,17 +120,17 @@ void RadioInterface::pullBuffer()
 
 	/* Read samples. Fail if we don't get what we want. */
 	numRead = mRadio->readSamples((float *) highRateRxBuf->data,
-				      OUTCHUNK, &overrun, readTimestamp,
-				      &localUnderrun);
+				      OUTCHUNK * mChanM, &overrun,
+				      readTimestamp, &localUnderrun);
 
 	LOG(DEBUG) << "Rx read " << highRateRxBuf->len << " samples from device";
-	assert(numRead == OUTCHUNK);
+	assert(numRead == (OUTCHUNK * mChanM));
 
 	highRateRxBuf->len = numRead;
 	underrun |= localUnderrun;
 	readTimestamp += (TIMESTAMP) highRateRxBuf->len;
 
-	for (i = 0; i < CHAN_M; i++) {
+	for (i = 0; i < mChanM; i++) {
 		lowRateRxBufs[i]->start_idx = rcvCursor;
 		lowRateRxBufs[i]->data = &lowRateRxBufs[i]->buf[rcvCursor];
 		lowRateRxBufs[i]->len = INCHUNK;
@@ -142,11 +142,11 @@ void RadioInterface::pullBuffer()
 }
 
 /* Resize data buffers of length 'len' after reading 'n' samples */
-static void shiftTxBufs(struct cxvec **vecs, int len, int n)
+static void shiftTxBufs(struct cxvec **vecs, int chanM, int len, int n)
 {
 	int i;
 
-	for (i = 0; i < CHAN_M; i++) {
+	for (i = 0; i < chanM; i++) {
 		memmove(vecs[i]->data, &vecs[i]->data[n],
 			(len - n) * sizeof(cmplx));
 	}
@@ -163,11 +163,11 @@ void RadioInterface::pushBuffer()
 	/* We only handle 1 */
 	numChunks = 1;
 
-	for (i = 0; i < CHAN_M; i++) {
+	for (i = 0; i < mChanM; i++) {
 		lowRateTxBufs[i]->len = numChunks * INCHUNK;
 	}
 
-	highRateTxBuf->len = numChunks * OUTCHUNK;
+	highRateTxBuf->len = numChunks * OUTCHUNK * mChanM;
 
 	numConverted = synth->rotate(lowRateTxBufs, highRateTxBuf);
 
@@ -180,14 +180,14 @@ void RadioInterface::pushBuffer()
 	writeTimestamp += (TIMESTAMP) numSent;
 
 	/* Move unsent samples to beginning of buffer */
-	shiftTxBufs(lowRateTxBufs, sendCursor, lowRateTxBufs[0]->len);
+	shiftTxBufs(lowRateTxBufs, mChanM, sendCursor, lowRateTxBufs[0]->len);
 	sendCursor -= lowRateTxBufs[0]->len;
 	assert(sendCursor >= 0);
 }
 
 bool RadioInterface::activateChan(int num)
 {
-	if ((num >= CHAN_M) || (num < 0)) {
+	if ((num >= mChanM) || (num < 0)) {
 		LOG(ERR) << "Invalid channel selection";
 		return false;
 	}
@@ -204,7 +204,7 @@ bool RadioInterface::activateChan(int num)
 
 bool RadioInterface::deactivateChan(int num)
 {
-	if ((num >= CHAN_M) || (num < 0)) {
+	if ((num >= mChanM) || (num < 0)) {
 		LOG(ERR) << "Invalid channel selection";
 		return false;
 	}
