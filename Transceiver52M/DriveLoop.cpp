@@ -258,6 +258,26 @@ void DriveLoop::driveTransmitFIFO()
 
   RadioClock *radioClock = (mRadioInterface->getClock());
   while (radioClock->get() + mTransmitLatency > mTransmitDeadlineClock) {
+    if (mRadioInterface->isUnderrun()) {
+      // only do latency update every 10 frames, so we don't over update
+      if (radioClock->get() > mLatencyUpdateTime + GSM::Time(10,0)) {
+        mTransmitLatency = mTransmitLatency + GSM::Time(1,0);
+        LOG(INFO) << "new latency: " << mTransmitLatency;
+        mLatencyUpdateTime = radioClock->get();
+      }
+    }
+    else {
+      // if underrun hasn't occurred in the last sec (216 frames) drop
+      //    transmit latency by a timeslot
+      if (mTransmitLatency > GSM::Time(1,1)) {
+          if (radioClock->get() > mLatencyUpdateTime + GSM::Time(216,0)) {
+          mTransmitLatency.decTN();
+          LOG(INFO) << "reduced latency: " << mTransmitLatency;
+          mLatencyUpdateTime = radioClock->get();
+        }
+      }
+    }
+
     pushRadioVector(mTransmitDeadlineClock);
     mTransmitDeadlineClock.incTN();
   }
