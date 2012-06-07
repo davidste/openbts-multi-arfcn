@@ -91,7 +91,9 @@ private:
   unsigned long hi32Timestamp;
   unsigned long lastPktTimestamp;
 
+  double txAmpl;
   double rxGain;
+  TIMESTAMP rxOffset;
 
 #ifdef SWLOOPBACK 
   short loopbackBuffer[1000000];
@@ -173,7 +175,7 @@ private:
   TIMESTAMP initialReadTimestamp(void) { return 20000;}
 
   /** returns the full-scale transmit amplitude **/
-  double fullScaleInputValue() {return 13500.0;}
+  double fullScaleInputValue() {return 13500.0 * txAmpl;}
 
   /** returns the full-scale receive amplitude **/
   double fullScaleOutputValue() {return 9450.0;}

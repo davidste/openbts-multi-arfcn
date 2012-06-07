@@ -61,12 +61,13 @@ const double USRPDevice::masterClockRate = 52.0e6;
 
 USRPDevice::USRPDevice(double _desiredSampleRate,
                        double offset, double ampl, bool skipRx)
-  : skipRx(skipRx)
+  : skipRx(skipRx), txAmpl(ampl)
 {
   LOG(INFO) << "creating USRP device...";
   decimRate = (unsigned int) round(masterClockRate/_desiredSampleRate);
   actualSampleRate = masterClockRate/decimRate;
   rxGain = 0;
+  rxOffset = (TIMESTAMP) (offset * actualSampleRate);
 
 #ifdef SWLOOPBACK 
   samplePeriod = 1.0e6/actualSampleRate;
@@ -290,12 +291,12 @@ double USRPDevice::setRxGain(double dB) {
 }
 
 
-void convertSamples(short *shortBuf, int len, float scale)
+void convertSamples(short *shortBuf, int len)
 {
   float *floatBuf = new float[len*2];
 
   for (int i = 0; i < len*2; i++) {
-	floatBuf[i] = (float) usrp_to_host_short(shortBuf[i]);
+	floatBuf[i] = (float) usrp_to_host_short(shortBuf[i]) / (float) 32768;
   }
 
   memcpy(shortBuf, floatBuf, len * 2 * sizeof(float));
@@ -314,8 +315,8 @@ int USRPDevice::readSamples(float *floatBuf, int len, bool *overrun,
  
   short *buf = (short *) floatBuf;
  
-  timestamp += timestampOffset;
-  
+  timestamp += timestampOffset + rxOffset; 
+
   if (timestamp + len < timeStart) {
     memset(buf,0,len*2*sizeof(short));
     return len;
@@ -417,7 +418,7 @@ int USRPDevice::readSamples(float *floatBuf, int len, bool *overrun,
   dataStart = (bufStart + len) % (currDataSize/2);
   timeStart = timestamp + len;
 
-  convertSamples(buf, len, fullScaleOutputValue());
+  convertSamples(buf, len);
 
   return len;
   

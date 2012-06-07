@@ -28,6 +28,12 @@
 #define SAMPSPERSYM		1
 #define GSM_RATE		(1625e3 / 6)
 
+#ifdef USE_UHD 
+#  define DEVICE_TYPE		DEV_UHD
+#else
+#  define DEVICE_TYPE		DEV_USRP1
+#endif
+
 /* Channelizer settings */
 #define CHAN_MAX		10
 #define CHAN_RATE		400e3
@@ -45,10 +51,16 @@
 #  endif
 #endif
 
+enum deviceType {
+	DEV_USRP1,
+	DEV_UHD,
+};
+
 double getRadioOffset(int chanM,
 		      double chanRate = CHAN_RATE,
 		      int sps = SAMPSPERSYM,
 		      int resampFiltLen = RESAMP_FILT_LEN,
-		      int chanFiltLen = CHAN_FILT_LEN);
+		      int chanFiltLen = CHAN_FILT_LEN,
+		      deviceType type = DEVICE_TYPE);
 
 #endif /* RADIOPARAMS_H */
