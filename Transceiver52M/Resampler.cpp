@@ -27,7 +27,7 @@
 #include "Logger.h"
 #include "Resampler.h"
 
-#define MAX_OUTPUT_LEN		4096
+#define MAX_OUTPUT_LEN		(4096 * 8)
 
 bool Resampler::initFilters(struct cxvec **protoFilter)
 {
