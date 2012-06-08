@@ -129,13 +129,6 @@ int main(int argc, char *argv[])
 	 * channelizer.
 	 */
 	switch (numARFCN) {
-	case 1:
-		chanM = 1;
-		break;
-	case 2:
-	case 3:
-		chanM = 5;
-		break;
 	default:
 		chanM = 10;
 	}
@@ -148,16 +141,16 @@ int main(int argc, char *argv[])
 		LOG(ALERT) << "Rx burst timing may not be accurate"; 
 	}
 
-	double deviceRate = chanM * CHAN_RATE;
+	double deviceRate = chanM * CHAN_RATE * RESAMP_OUTRATE / RESAMP_MIDRATE;
 	usrp = RadioDevice::make(deviceRate, rxOffset, DEVICE_TX_AMPL / numARFCN);
 	if (!usrp->open()) {
 		LOG(ALERT) << "Failed to open device, exiting...";
 		return EXIT_FAILURE;
 	}
 
-	radio = new RadioInterface(usrp, chanM, numARFCN, SAMPSPERSYM, 0, false);
+	radio = new RadioInterface(usrp, chanM, 3, SAMPSPERSYM, 0, false);
 	drive = new DriveLoop(5700, "127.0.0.1", chanM, chanMap[0],
-			      SAMPSPERSYM, GSM::Time(3,0), radio);
+			      SAMPSPERSYM, GSM::Time(6,0), radio);
 
 	/* Create, attach, and activate all transceivers */
 	createTrx(trx, chanMap, numARFCN, radio, drive);

@@ -27,7 +27,7 @@
 #include "Logger.h"
 #include "Resampler.h"
 
-#define MAX_OUTPUT_LEN		4096
+#define MAX_OUTPUT_LEN		(4096 * 8)
 
 bool Resampler::initFilters(struct cxvec **protoFilter)
 {
@@ -169,6 +169,7 @@ int Resampler::rotateSingle(struct cxvec *in, struct cxvec *out, struct cxvec *h
 		single_convolve(&in->data[n],
 				partitions[path],
 				&out->data[i]);
+
 	}
 
 	/* Save history */
