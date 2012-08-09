@@ -58,12 +58,21 @@ bool Resampler::initFilters(struct cxvec **protoFilter)
 		partitions[i] = cxvec_alloc(mPartitionLen, 0, NULL, flags);
 
 	/* 
-	 * Generate the prototype filter with a boxcar windowed sinc filter.
+	 * Generate the prototype filter with a Blackman-harris window.
 	 * Scale coefficients with DC filter gain set to unity divided
 	 * by the number of filter partitions. 
 	 */
+	float a0 = 0.35875;
+	float a1 = 0.48829;
+	float a2 = 0.14128;
+	float a3 = 0.01168;
+
 	for (i = 0; i < protoFilterLen; i++) {
 		protoFiltBase[i] = cxvec_sinc(((float) i - midpt) / mP);
+		protoFiltBase[i] *= a0 -
+				    a1 * cos(2 * M_PI * i / (protoFilterLen - 1)) +
+				    a2 * cos(4 * M_PI * i / (protoFilterLen - 1)) -
+				    a3 * cos(6 * M_PI * i / (protoFilterLen - 1));
 		sum += protoFiltBase[i];
 	}
 	scale = mP / sum;

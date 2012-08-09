@@ -80,12 +80,21 @@ bool ChannelizerBase::initFilters(struct cxvec **protoFilter)
 	}
 
 	/* 
-	 * Generate the prototype filter with a boxcar windowed sinc filter.
+	 * Generate the prototype filter with a Blackman-harris window.
 	 * Scale coefficients with DC filter gain set to unity divided
 	 * by the number of channels.
 	 */
+	float a0 = 0.35875;
+	float a1 = 0.48829;
+	float a2 = 0.14128;
+	float a3 = 0.01168;
+
 	for (i = 0; i < protoFilterLen; i++) {
 		protoFilterBase[i] = cxvec_sinc(((float) i - midpt) / m);
+		protoFilterBase[i] *= a0 -
+				      a1 * cos(2 * M_PI * i / (protoFilterLen - 1)) +
+				      a2 * cos(4 * M_PI * i / (protoFilterLen - 1)) -
+				      a3 * cos(6 * M_PI * i / (protoFilterLen - 1));
 		sum += protoFilterBase[i];
 	}
 	scale = mChanM / sum;
