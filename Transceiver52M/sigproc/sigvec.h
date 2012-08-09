@@ -58,6 +58,7 @@ void cxvec_reset(struct cxvec *vec);
 int cxvec_rvrs(struct cxvec *in, struct cxvec *out);
 int cxvec_cp(struct cxvec *dst, struct cxvec *src);
 int cxvec_sub(struct cxvec *a, struct cxvec *b, struct cxvec *out);
+int cxvec_mul(struct cxvec *a, struct cxvec *b, struct cxvec *out);
 int cxvec_decim(struct cxvec *in, struct cxvec *out, int idx, int decim);
 int cxvec_shft(struct cxvec *vec, struct cxvec *h, enum cxvec_conv_type type);
 
@@ -72,5 +73,11 @@ int cxvec_deinterlv_rv(struct cxvec *in, struct cxvec **out, int chan_m);
 
 /* Floating point utilities */
 float cxvec_sinc(float x);
+
+static inline void mul_cx_gen(struct cmplx *a, struct cmplx *b, struct cmplx *out)
+{
+	out->real = a->real * b->real - a->imag * b->imag;
+	out->imag = a->real * b->imag + a->imag * b->real;
+}
 
 #endif /* _SIGVEC_H_ */
