@@ -141,6 +141,74 @@ static void conv_real_sse8(float *restrict x,
 	}
 }
 
+/* 12-tap SSE3 complex-real convolution */
+static void conv_real_sse12(float *restrict x,
+			    float *restrict h,
+			    float *restrict y,
+			    int in_len)
+{
+	int i;
+	__m128 m0, m1, m2, m3, m4, m5, m6, m7;
+	__m128 m8, m9, m10, m11, m12, m13, m14, m15;
+
+	union {
+		__m128 m;
+		float w[4] __attribute__((aligned(16)));
+	} total;
+
+	/* Load (aligned) filter taps */
+	m0 = _mm_load_ps(&h[0]);
+	m1 = _mm_load_ps(&h[4]);
+	m2 = _mm_load_ps(&h[8]);
+	m3 = _mm_load_ps(&h[12]);
+	m4 = _mm_load_ps(&h[16]);
+	m5 = _mm_load_ps(&h[20]);
+
+	m12 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+	m13 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(0, 2, 0, 2));
+	m14 = _mm_shuffle_ps(m4, m5, _MM_SHUFFLE(0, 2, 0, 2));
+
+	for (i = 0; i < in_len; i++) {
+		/* Load (unaligned) input data */
+		m0 = _mm_loadu_ps(&x[2*i + 0]);
+		m1 = _mm_loadu_ps(&x[2*i + 4]);
+		m2 = _mm_loadu_ps(&x[2*i + 8]);
+		m3 = _mm_loadu_ps(&x[2*i + 12]);
+
+		m4 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+		m5 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(1, 3, 1, 3));
+		m6 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(0, 2, 0, 2));
+		m7 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(1, 3, 1, 3));
+
+		m0 = _mm_loadu_ps(&x[2*i + 16]);
+		m1 = _mm_loadu_ps(&x[2*i + 20]);
+
+		m8 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+		m9 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(1, 3, 1, 3));
+
+		/* Quad multiply */
+		m0 = _mm_mul_ps(m4, m12);
+		m1 = _mm_mul_ps(m5, m12);
+		m2 = _mm_mul_ps(m6, m13);
+		m3 = _mm_mul_ps(m7, m13);
+		m4 = _mm_mul_ps(m8, m14);
+		m5 = _mm_mul_ps(m9, m14);
+
+		/* Sum and store */
+		m8  = _mm_add_ps(m0, m2);
+		m9  = _mm_add_ps(m1, m3);
+		m10 = _mm_add_ps(m8, m4);
+		m11 = _mm_add_ps(m9, m5);
+
+		m2 = _mm_hadd_ps(m10, m11);
+		m3 = _mm_hadd_ps(m2, m2);
+
+		total.m = m3;
+		y[2*i + 0] = total.w[0];
+		y[2*i + 1] = total.w[1];
+	}
+}
+
 /* 16-tap SSE3 complex-real convolution */
 static void conv_real_sse16(float *restrict x,
 			    float *restrict h,
@@ -222,6 +290,93 @@ static void conv_real_sse16(float *restrict x,
 	}
 }
 
+/* 20-tap SSE3 complex-real convolution */
+static void conv_real_sse20(float *restrict x,
+			    float *restrict h,
+			    float *restrict y,
+			    int in_len)
+{
+	int i;
+	__m128 m0, m1, m2, m3, m4, m5, m6, m7;
+	__m128 m8, m9, m10, m11, m12, m13, m14, m15;
+
+	/* Load (aligned) filter taps */
+	m0 = _mm_load_ps(&h[0]);
+	m1 = _mm_load_ps(&h[4]);
+	m2 = _mm_load_ps(&h[8]);
+	m3 = _mm_load_ps(&h[12]);
+	m4 = _mm_load_ps(&h[16]);
+	m5 = _mm_load_ps(&h[20]);
+	m6 = _mm_load_ps(&h[24]);
+	m7 = _mm_load_ps(&h[28]);
+	m8 = _mm_load_ps(&h[32]);
+	m9 = _mm_load_ps(&h[36]);
+
+	m11 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+	m12 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(0, 2, 0, 2));
+	m13 = _mm_shuffle_ps(m4, m5, _MM_SHUFFLE(0, 2, 0, 2));
+	m14 = _mm_shuffle_ps(m6, m7, _MM_SHUFFLE(0, 2, 0, 2));
+	m15 = _mm_shuffle_ps(m8, m9, _MM_SHUFFLE(0, 2, 0, 2));
+
+	for (i = 0; i < in_len; i++) {
+		/* Multiply-accumulate first 12 taps */
+		m0 = _mm_loadu_ps(&x[2*i + 0]);
+		m1 = _mm_loadu_ps(&x[2*i + 4]);
+		m2 = _mm_loadu_ps(&x[2*i + 8]);
+		m3 = _mm_loadu_ps(&x[2*i + 12]);
+		m4 = _mm_loadu_ps(&x[2*i + 16]);
+		m5 = _mm_loadu_ps(&x[2*i + 20]);
+
+		m6  = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+		m7  = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(1, 3, 1, 3));
+		m8  = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(0, 2, 0, 2));
+		m9  = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(1, 3, 1, 3));
+		m0  = _mm_shuffle_ps(m4, m5, _MM_SHUFFLE(0, 2, 0, 2));
+		m1  = _mm_shuffle_ps(m4, m5, _MM_SHUFFLE(1, 3, 1, 3));
+
+		m2 = _mm_mul_ps(m6, m11);
+		m3 = _mm_mul_ps(m7, m11);
+		m4 = _mm_mul_ps(m8, m12);
+		m5 = _mm_mul_ps(m9, m12);
+		m6 = _mm_mul_ps(m0, m13);
+		m7 = _mm_mul_ps(m1, m13);
+
+		m0  = _mm_add_ps(m2, m4);
+		m1  = _mm_add_ps(m3, m5);
+		m8  = _mm_add_ps(m0, m6);
+		m9  = _mm_add_ps(m1, m7);
+
+		/* Multiply-accumulate last 8 taps */
+		m0 = _mm_loadu_ps(&x[2*i + 24]);
+		m1 = _mm_loadu_ps(&x[2*i + 28]);
+		m2 = _mm_loadu_ps(&x[2*i + 32]);
+		m3 = _mm_loadu_ps(&x[2*i + 36]);
+
+		m4 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(0, 2, 0, 2));
+		m5 = _mm_shuffle_ps(m0, m1, _MM_SHUFFLE(1, 3, 1, 3));
+		m6 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(0, 2, 0, 2));
+		m7 = _mm_shuffle_ps(m2, m3, _MM_SHUFFLE(1, 3, 1, 3));
+
+		m0 = _mm_mul_ps(m4, m14);
+		m1 = _mm_mul_ps(m5, m14);
+		m2 = _mm_mul_ps(m6, m15);
+		m3 = _mm_mul_ps(m7, m15);
+
+		m4  = _mm_add_ps(m0, m2);
+		m5  = _mm_add_ps(m1, m3);
+
+		/* Final sum and store */
+		m0 = _mm_add_ps(m8, m4);
+		m1 = _mm_add_ps(m9, m5);
+		m2 = _mm_hadd_ps(m0, m1);
+		m3 = _mm_hadd_ps(m2, m2);
+		m4 = _mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0, 3, 2, 1));
+
+		_mm_store_ss(&y[2*i + 0], m3);
+		_mm_store_ss(&y[2*i + 1], m4);
+	}
+}
+
 /*! \brief Convolve two complex vectors 
  *  \param[in] in_vec Complex input signal
  *  \param[in] h_vec Complex filter taps (stored in reverse order)
@@ -260,11 +415,17 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
 	case 8:
 		conv_func = conv_real_sse8;
 		break;
+	case 12:
+		conv_func = conv_real_sse12;
+		break;
 	case 16:
 		conv_func = conv_real_sse16;
 		break;
+	case 20:
+		conv_func = conv_real_sse20;
+		break;
 	default:
-		conv_func = NULL; 
+		conv_func = NULL;
 	}
 
 	x = in_vec->data;	/* input */
@@ -311,11 +472,17 @@ int single_convolve(cmplx *restrict in,
 	case 8:
 		conv_func = conv_real_sse8;
 		break;
+	case 12:
+		conv_func = conv_real_sse12;
+		break;
 	case 16:
 		conv_func = conv_real_sse16;
 		break;
+	case 20:
+		conv_func = conv_real_sse20;
+		break;
 	default:
-		conv_func = NULL; 
+		conv_func = NULL;
 	}
 
 	if (!conv_func) {
