@@ -57,11 +57,6 @@ static void conv_real_sse4(float *restrict x,
 	int i;
 	__m128 m0, m1, m2, m3, m4, m5, m6, m7;
 
-	union {
-		__m128 m;
-		float w[4] __attribute__((aligned(16)));
-	} total;
-
 	/* Load (aligned) filter taps */
 	m0 = _mm_load_ps(&h[0]);
 	m1 = _mm_load_ps(&h[4]);
@@ -82,9 +77,9 @@ static void conv_real_sse4(float *restrict x,
 		m6 = _mm_hadd_ps(m4, m5);
 		m0 = _mm_hadd_ps(m6, m6);
 
-		total.m = m0;
-		y[2*i + 0] = total.w[0];
-		y[2*i + 1] = total.w[1];
+		_mm_store_ss(&y[2*i + 0], m0);
+		m0 = _mm_shuffle_ps(m0, m0, _MM_SHUFFLE(0, 3, 2, 1));
+		_mm_store_ss(&y[2*i + 1], m0);
 	}
 }
 
@@ -96,11 +91,6 @@ static void conv_real_sse8(float *restrict x,
 {
 	int i;
 	__m128 m0, m1, m2, m3, m4, m5, m6, m7, m8, m9;
-
-	union {
-		__m128 m;
-		float w[4] __attribute__((aligned(16)));
-	} total;
 
 	/* Load (aligned) filter taps */
 	m0 = _mm_load_ps(&h[0]);
@@ -135,9 +125,9 @@ static void conv_real_sse8(float *restrict x,
 		m8 = _mm_hadd_ps(m6, m7);
 		m9 = _mm_hadd_ps(m8, m8);
 
-		total.m = m9;
-		y[2*i + 0] = total.w[0];
-		y[2*i + 1] = total.w[1];
+		_mm_store_ss(&y[2*i + 0], m9);
+		m9 = _mm_shuffle_ps(m9, m9, _MM_SHUFFLE(0, 3, 2, 1));
+		_mm_store_ss(&y[2*i + 1], m9);
 	}
 }
 
@@ -150,11 +140,6 @@ static void conv_real_sse12(float *restrict x,
 	int i;
 	__m128 m0, m1, m2, m3, m4, m5, m6, m7;
 	__m128 m8, m9, m10, m11, m12, m13, m14, m15;
-
-	union {
-		__m128 m;
-		float w[4] __attribute__((aligned(16)));
-	} total;
 
 	/* Load (aligned) filter taps */
 	m0 = _mm_load_ps(&h[0]);
@@ -203,9 +188,9 @@ static void conv_real_sse12(float *restrict x,
 		m2 = _mm_hadd_ps(m10, m11);
 		m3 = _mm_hadd_ps(m2, m2);
 
-		total.m = m3;
-		y[2*i + 0] = total.w[0];
-		y[2*i + 1] = total.w[1];
+		_mm_store_ss(&y[2*i + 0], m3);
+		m3 = _mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0, 3, 2, 1));
+		_mm_store_ss(&y[2*i + 1], m3);
 	}
 }
 
@@ -218,11 +203,6 @@ static void conv_real_sse16(float *restrict x,
 	int i;
 	__m128 m0, m1, m2, m3, m4, m5, m6, m7;
 	__m128 m8, m9, m10, m11, m12, m13, m14, m15;
-
-	union {
-		__m128 m;
-		float w[4] __attribute__((aligned(16)));
-	} total;
 
 	/* Load (aligned) filter taps */
 	m0 = _mm_load_ps(&h[0]);
@@ -284,9 +264,9 @@ static void conv_real_sse16(float *restrict x,
 		m2 = _mm_hadd_ps(m0, m1);
 		m3 = _mm_hadd_ps(m2, m2);
 
-		total.m = m3;
-		y[2*i + 0] = total.w[0];
-		y[2*i + 1] = total.w[1];
+		_mm_store_ss(&y[2*i + 0], m3);
+		m3 = _mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0, 3, 2, 1));
+		_mm_store_ss(&y[2*i + 1], m3);
 	}
 }
 
@@ -370,10 +350,10 @@ static void conv_real_sse20(float *restrict x,
 		m1 = _mm_add_ps(m9, m5);
 		m2 = _mm_hadd_ps(m0, m1);
 		m3 = _mm_hadd_ps(m2, m2);
-		m4 = _mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0, 3, 2, 1));
 
 		_mm_store_ss(&y[2*i + 0], m3);
-		_mm_store_ss(&y[2*i + 1], m4);
+		m3 = _mm_shuffle_ps(m3, m3, _MM_SHUFFLE(0, 3, 2, 1));
+		_mm_store_ss(&y[2*i + 1], m3);
 	}
 }
 
