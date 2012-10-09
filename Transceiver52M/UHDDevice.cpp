@@ -318,7 +318,7 @@ double uhd_device::set_rates(double rate)
 {
 	double actual_rt, actual_clk_rt;
 
-#if !defined(MULTICHAN) & !defined(RESAMPLE)
+#ifdef RESAMPLE
 	// Make sure we can set the master clock rate on this device
 	actual_clk_rt = usrp_dev->get_master_clock_rate();
 	if (actual_clk_rt > U1_DEFAULT_CLK_RT) {

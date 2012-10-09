@@ -35,6 +35,7 @@
 #include <math.h>
 #include "ad9862.h"
 #include <cstdio>
+#include <unistd.h>
 
 using namespace ad9862;
 

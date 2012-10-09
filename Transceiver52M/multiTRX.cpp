@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
 	 */
 	switch (numARFCN) {
 	default:
-		chanM = 10;
+		chanM = 8;
 	}
 	genChanMap(numARFCN, chanM, chanMap);
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 		LOG(ALERT) << "Rx burst timing may not be accurate"; 
 	}
 
-	double deviceRate = chanM * CHAN_RATE * RESAMP_OUTRATE / RESAMP_MIDRATE;
+	double deviceRate = chanM * CHAN_RATE * OUTER_RESAMP_OUTRATE / OUTER_RESAMP_INRATE;
 	usrp = RadioDevice::make(deviceRate, rxOffset, DEVICE_TX_AMPL / numARFCN);
 	if (!usrp->open()) {
 		LOG(ALERT) << "Failed to open device, exiting...";

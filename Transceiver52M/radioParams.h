@@ -31,13 +31,17 @@
 /* Channelizer settings */
 #define CHAN_MAX		10
 #define CHAN_RATE		400e3
-#define CHAN_FILT_LEN		16
+#define CHAN_FILT_LEN		8
 
-/* Resampler settings */
-#define RESAMP_INRATE		(65 * SAMPSPERSYM * SAMPSPERSYM)
-#define RESAMP_MIDRATE		(96 * SAMPSPERSYM)
-#define RESAMP_OUTRATE		(104 * SAMPSPERSYM)
-#define RESAMP_FILT_LEN		8
+/* Inner resampler settings */
+#define INNER_RESAMP_INRATE	(65 * SAMPSPERSYM * SAMPSPERSYM)
+#define INNER_RESAMP_OUTRATE	(96 * SAMPSPERSYM)
+#define INNER_RESAMP_FILT_LEN	8
+
+/* Outer resampler settings */
+#define OUTER_RESAMP_INRATE	(64 * SAMPSPERSYM * SAMPSPERSYM)
+#define OUTER_RESAMP_OUTRATE	(65 * SAMPSPERSYM)
+#define OUTER_RESAMP_FILT_LEN	8
 
 #ifndef MULTICHAN
 #  ifndef RESAMPLE
@@ -49,7 +53,7 @@
 double getRadioOffset(int chanM,
 		      double chanRate = CHAN_RATE,
 		      int sps = SAMPSPERSYM,
-		      int resampFiltLen = RESAMP_FILT_LEN,
+		      int resampFiltLen = INNER_RESAMP_FILT_LEN,
 		      int chanFiltLen = CHAN_FILT_LEN);
 
 #endif /* RADIOPARAMS_H */

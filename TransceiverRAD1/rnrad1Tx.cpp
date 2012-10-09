@@ -23,6 +23,7 @@
 
 */
 
+#include <unistd.h>
 #include "rnrad1.h"
 
 #include "ad9862.h"

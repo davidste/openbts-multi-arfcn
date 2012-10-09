@@ -12,7 +12,7 @@ INSERT INTO "CONFIG" VALUES('Control.LUR.FailedRegistration.Message','Your hands
 INSERT INTO "CONFIG" VALUES('Control.LUR.FailedRegistration.ShortCode','1000',0,1,'The return address for the failed registration message.  If the message is defined, this must also be defined.');
 INSERT INTO "CONFIG" VALUES('Control.LUR.NormalRegistration.Message',NULL,0,1,'If defined, send this text message, followed by the IMSI, to provisioned handsets when they attach on Um.');
 INSERT INTO "CONFIG" VALUES('Control.LUR.NormalRegistration.ShortCode','0000',0,1,'The return address for the normal registration message.  If the message is defined, this must also be defined.');
-INSERT INTO "CONFIG" VALUES('Control.LUR.OpenRegistration',NULL,0,1,'If not NULL, allow unprovisioned handsets to attach in Um.');
+INSERT INTO "CONFIG" VALUES('Control.LUR.OpenRegistration','1',0,1,'If not NULL, allow unprovisioned handsets to attach in Um.');
 INSERT INTO "CONFIG" VALUES('Control.LUR.OpenRegistration.Message','Welcome to the GSM test network.  Your IMSI is ',0,1,'If defined, send this text message, followed by the IMSI, to unprovisioned handsets when they attach on Um due to open registration.');
 INSERT INTO "CONFIG" VALUES('Control.LUR.OpenRegistration.ShortCode','101',0,1,'The return address for the open registration message.  If the message is defined, this must also be defined.');
 INSERT INTO "CONFIG" VALUES('Control.LUR.QueryClassmark',NULL,0,1,'If not NULL, query every MS for classmark during LUR.');
@@ -55,7 +55,7 @@ INSERT INTO "CONFIG" VALUES('GSM.MaxSpeechLatency','2',0,0,'Maximum allowed spee
 INSERT INTO "CONFIG" VALUES('GSM.RACH.AC','1024',0,0,'Access class flags.  This is the raw parameter sent on the BCCH.  See GSM 04.08 10.5.2.29 for encoding.  Set to 0 to allow full access.  If you do not have proper PSAP integration, set to 0x0400 to indicate no support for emergency calls.');
 INSERT INTO "CONFIG" VALUES('GSM.RACH.MaxRetrans','1',0,0,'Maximum RACH retransmission attempts.  This is the raw parameter sent on the BCCH.  See GSM 04.08 10.5.2.29 for encoding.');
 INSERT INTO "CONFIG" VALUES('GSM.RACH.TxInteger','14',0,0,'Parameter to spread RACH busts over time.  This is the raw parameter sent on the BCCH.  See GSM 04.08 10.5.2.29 for encoding.');
-INSERT INTO "CONFIG" VALUES('GSM.Radio.ARFCNs','1 ',1,0,'The number of ARFCNs to use.  The ARFCN set will be C0, C0+2, C0+4, etc.  Static.');
+INSERT INTO "CONFIG" VALUES('GSM.Radio.ARFCNs','3 ',1,0,'The number of ARFCNs to use.  The ARFCN set will be C0, C0+2, C0+4, etc.  Static.');
 INSERT INTO "CONFIG" VALUES('GSM.RADIO-LINK-TIMEOUT','15',0,0,' L1 radio link timeout.  This is the raw parameter sent on the BCCH; see GSM 10.5.2.3 for encoding. Should be coordinated with T3109.');
 INSERT INTO "CONFIG" VALUES('GSM.RRLP.ACCURACY','40',0,0,'Requested accuracy of location request. K in 10(1.1**K-1). See 3GPP 03.32, sect 6.2');
 INSERT INTO "CONFIG" VALUES('GSM.RRLP.ALMANAC.REFRESH.TIME','24.0',0,0,'How often the almanac is refreshed, in hours');
@@ -85,7 +85,7 @@ INSERT INTO "CONFIG" VALUES('GSM.Timer.T3122Max','255000',0,0,'Maximum allowed v
 INSERT INTO "CONFIG" VALUES('GSM.Timer.T3122Min','2000',0,0,'Minimum allowed value for T3122, the RACH holdoff timer, in milliseconds.');
 INSERT INTO "CONFIG" VALUES('GSM.Timer.T3212','30',0,0,'Registration timer T3212 period in minutes.  Should be a factor of 6.  Set to 0 to disable periodic registration.  Should be smaller than SIP registration period.');
 INSERT INTO "CONFIG" VALUES('Log.Alarms.Max','20',0,0,'Maximum number of alarms to remember inside the application.');
-INSERT INTO "CONFIG" VALUES('Log.Level','WARNING',0,0,'Default logging level when no other level is defined for a file.');
+INSERT INTO "CONFIG" VALUES('Log.Level','INFO',0,0,'Default logging level when no other level is defined for a file.');
 INSERT INTO "CONFIG" VALUES('Log.Level.CallControl.cpp','INFO',0,1,'Default configuration logs a trace at L3.');
 INSERT INTO "CONFIG" VALUES('Log.Level.MobilityManagement.cpp','INFO',0,1,'Default configuration logs a trace at L3.');
 INSERT INTO "CONFIG" VALUES('Log.Level.RadioResource.cpp','INFO',0,1,'Default configuration logs a trace at L3.');

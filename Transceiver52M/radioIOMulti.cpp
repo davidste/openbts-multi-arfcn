@@ -34,22 +34,24 @@
 #endif
 
 /* Channelizer parameters */
-#define CHUNKMUL		9
-#define INCHUNK			(RESAMP_INRATE * CHUNKMUL)
-#define MIDCHUNK		(RESAMP_MIDRATE * CHUNKMUL)
-#define OUTCHUNK		(RESAMP_OUTRATE * CHUNKMUL)
-#define INBUFLEN		(INCHUNK * 4)
-#define MIDBUFLEN		(MIDCHUNK * 4)
-#define OUTBUFLEN		(OUTCHUNK * 4)
+#define CHAN_INCHUNK		(INNER_RESAMP_INRATE * 2)
+#define CHAN_OUTCHUNK		(INNER_RESAMP_OUTRATE * 2)
 
-static struct cxvec *highRateTxBuf;
-static struct cxvec *highRateRxBuf;
+#define RESAMP_INCHUNK		(OUTER_RESAMP_INRATE * 3)
+#define RESAMP_OUTCHUNK		(OUTER_RESAMP_OUTRATE * 3)
 
-static struct cxvec *midRateTxBuf;
-static struct cxvec *midRateRxBuf;
+#define INBUFLEN		(CHAN_OUTCHUNK * 4)
+#define MIDBUFLEN		(RESAMP_INCHUNK * 4)
+#define OUTBUFLEN		(RESAMP_OUTCHUNK * 4)
 
-static struct cxvec *lowRateTxBufs[CHAN_MAX];
-static struct cxvec *lowRateRxBufs[CHAN_MAX];
+static struct cxvec *OuterTxBuf;
+static struct cxvec *OuterRxBuf;
+
+static struct cxvec *MiddleTxBuf;
+static struct cxvec *MiddleRxBuf;
+
+static struct cxvec *InnerTxBufs[CHAN_MAX];
+static struct cxvec *InnerRxBufs[CHAN_MAX];
 
 static Resampler *upsampler;
 static Resampler *dnsampler;
@@ -61,41 +63,52 @@ bool RadioInterface::init()
 {
 	int i;
 
-        dnsampler = new Resampler(RESAMP_MIDRATE, RESAMP_OUTRATE, RESAMP_FILT_LEN, 1);
+        dnsampler = new Resampler(OUTER_RESAMP_INRATE,
+				  OUTER_RESAMP_OUTRATE,
+				  OUTER_RESAMP_FILT_LEN, 1);
         if (!dnsampler->init(NULL)) {
                 LOG(ALERT) << "Rx resampler failed to initialize";
                 return false;
         }
         dnsampler->activateChan(0);
 
-        upsampler = new Resampler(RESAMP_OUTRATE, RESAMP_MIDRATE, RESAMP_FILT_LEN, 1);
+        upsampler = new Resampler(OUTER_RESAMP_OUTRATE,
+				  OUTER_RESAMP_INRATE,
+				  OUTER_RESAMP_FILT_LEN, 1);
         if (!upsampler->init(NULL)) {
                 LOG(ALERT) << "Tx resampler failed to initialize";
                 return false;
         }
         upsampler->activateChan(0);
 
-	chan = new Channelizer(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
-			       RESAMP_INRATE, RESAMP_MIDRATE, CHUNKMUL);
+	chan = new Channelizer(mChanM, CHAN_FILT_LEN,
+			       INNER_RESAMP_FILT_LEN,
+			       INNER_RESAMP_INRATE,
+			       INNER_RESAMP_OUTRATE, 2);
 	if (!chan->init(NULL)) {
 		LOG(ALERT) << "Rx channelizer failed to initialize";
 		return false;
 	}
 
-	synth = new Synthesis(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
-			      RESAMP_MIDRATE, RESAMP_INRATE, CHUNKMUL);
+	synth = new Synthesis(mChanM, CHAN_FILT_LEN,
+			      INNER_RESAMP_FILT_LEN,
+			      INNER_RESAMP_OUTRATE,
+			      INNER_RESAMP_INRATE, 2);
 	if (!synth->init(NULL)) {
 		LOG(ALERT) << "Tx channelizer failed to initialize";
 		return false;
 	}
 
-	highRateTxBuf = cxvec_alloc(OUTBUFLEN * mChanM, 0, NULL, 0);
-	highRateRxBuf = cxvec_alloc(OUTBUFLEN * mChanM + RESAMP_FILT_LEN, RESAMP_FILT_LEN, NULL, 0);
-	midRateTxBuf = cxvec_alloc(MIDBUFLEN * mChanM + RESAMP_FILT_LEN, RESAMP_FILT_LEN, NULL, 0);
-	midRateRxBuf = cxvec_alloc(MIDBUFLEN * mChanM, 0, NULL, 0);
+	OuterTxBuf = cxvec_alloc(OUTBUFLEN * mChanM, 0, NULL, 0);
+	OuterRxBuf = cxvec_alloc(OUTBUFLEN * mChanM + INNER_RESAMP_FILT_LEN,
+				 INNER_RESAMP_FILT_LEN, NULL, 0);
+	MiddleTxBuf = cxvec_alloc(MIDBUFLEN * mChanM + OUTER_RESAMP_FILT_LEN,
+				  OUTER_RESAMP_FILT_LEN, NULL, 0);
+	MiddleRxBuf = cxvec_alloc(MIDBUFLEN * mChanM, 0, NULL, 0);
 
-	midRateTxBuf->len = MIDCHUNK * mChanM;
-	midRateRxBuf->len = MIDCHUNK * mChanM;
+	assert(CHAN_OUTCHUNK == RESAMP_INCHUNK);
+	MiddleTxBuf->len = CHAN_OUTCHUNK * mChanM;
+	MiddleRxBuf->len = CHAN_OUTCHUNK * mChanM;
 
 	/*
 	 * Setup per-channel variables. The low rate transmit vectors 
@@ -109,10 +122,10 @@ bool RadioInterface::init()
 			synth->activateChan(i);
 		}
 
-		lowRateRxBufs[i] =
+		InnerRxBufs[i] =
 			cxvec_alloc(2 * 625, 0, (cmplx *) rcvBuffer[i], 0);
-		lowRateTxBufs[i] =
-			cxvec_alloc(2 * 625, RESAMP_FILT_LEN, (cmplx *) sendBuffer[i], 0);
+		InnerTxBufs[i] =
+			cxvec_alloc(2 * 625, INNER_RESAMP_FILT_LEN, (cmplx *) sendBuffer[i], 0);
 	}
 
 	return true;
@@ -122,16 +135,16 @@ void RadioInterface::close()
 {
 	int i;
 
-	cxvec_free(highRateTxBuf);
-	cxvec_free(highRateRxBuf);
+	cxvec_free(OuterTxBuf);
+	cxvec_free(OuterRxBuf);
 
 	/* Don't deallocate class member buffers */
 	for (i = 0; i < mChanM; i ++) {
-		lowRateRxBufs[i]->buf = NULL;
-		lowRateTxBufs[i]->buf = NULL;
+		InnerRxBufs[i]->buf = NULL;
+		InnerTxBufs[i]->buf = NULL;
 
-		cxvec_free(lowRateRxBufs[i]);
-		cxvec_free(lowRateTxBufs[i]);
+		cxvec_free(InnerRxBufs[i]);
+		cxvec_free(InnerTxBufs[i]);
 	}
 
 	delete chan;
@@ -145,26 +158,26 @@ void RadioInterface::pullBuffer()
 	bool localUnderrun;
 
 	/* Read samples. Fail if we don't get what we want. */
-	numRead = mRadio->readSamples((float *) highRateRxBuf->data,
-				      OUTCHUNK * mChanM, &overrun,
+	numRead = mRadio->readSamples((float *) OuterRxBuf->data,
+				      RESAMP_OUTCHUNK * mChanM, &overrun,
 				      readTimestamp, &localUnderrun);
 
-	assert(numRead == (OUTCHUNK * mChanM));
+	assert(numRead == (RESAMP_OUTCHUNK * mChanM));
 
-	highRateRxBuf->len = numRead;
+	OuterRxBuf->len = numRead;
 	underrun |= localUnderrun;
-	readTimestamp += (TIMESTAMP) highRateRxBuf->len;
+	readTimestamp += (TIMESTAMP) OuterRxBuf->len;
 
 	for (i = 0; i < mChanM; i++) {
-		lowRateRxBufs[i]->start_idx = rcvCursor;
-		lowRateRxBufs[i]->data = &lowRateRxBufs[i]->buf[rcvCursor];
-		lowRateRxBufs[i]->len = INCHUNK;
+		InnerRxBufs[i]->start_idx = rcvCursor;
+		InnerRxBufs[i]->data = &InnerRxBufs[i]->buf[rcvCursor];
+		InnerRxBufs[i]->len = CHAN_INCHUNK;
 	}
 
 	/* Channelize */
-	midRateTxBuf->len = MIDCHUNK * mChanM;
-	numConverted = dnsampler->rotate(&highRateRxBuf, &midRateRxBuf);
-	numConverted = chan->rotate(midRateRxBuf, lowRateRxBufs);
+	MiddleTxBuf->len = RESAMP_INCHUNK * mChanM;
+	numConverted = dnsampler->rotate(&OuterRxBuf, &MiddleRxBuf);
+	numConverted = chan->rotate(MiddleRxBuf, InnerRxBufs);
 	rcvCursor += numConverted;
 }
 
@@ -184,24 +197,24 @@ void RadioInterface::pushBuffer()
 {
 	int i, numConverted, numChunks, numSent;
 
-	if (sendCursor < INCHUNK)
+	if (sendCursor < RESAMP_INCHUNK)
 		return;
 
 	/* We only handle 1 */
 	numChunks = 1;
 
 	for (i = 0; i < mChanM; i++) {
-		lowRateTxBufs[i]->len = numChunks * INCHUNK;
+		InnerTxBufs[i]->len = numChunks * RESAMP_INCHUNK;
 	}
 
-	midRateTxBuf->len = numChunks * MIDCHUNK * mChanM;
-	highRateTxBuf->len = numChunks * OUTCHUNK * mChanM;
+	MiddleTxBuf->len = numChunks * RESAMP_INCHUNK * mChanM;
+	OuterTxBuf->len = numChunks * RESAMP_OUTCHUNK * mChanM;
 
-	numConverted = synth->rotate(lowRateTxBufs, midRateTxBuf);
-	numConverted = upsampler->rotate(&midRateTxBuf, &highRateTxBuf);
+	numConverted = synth->rotate(InnerTxBufs, MiddleTxBuf);
+	numConverted = upsampler->rotate(&MiddleTxBuf, &OuterTxBuf);
 
 	/* Write samples. Fail if we don't get what we want. */
-	numSent = mRadio->writeSamples((float *) highRateTxBuf->data,
+	numSent = mRadio->writeSamples((float *) OuterTxBuf->data,
 					numConverted,
 					&underrun,
 					writeTimestamp);
@@ -209,8 +222,8 @@ void RadioInterface::pushBuffer()
 	writeTimestamp += (TIMESTAMP) numSent;
 
 	/* Move unsent samples to beginning of buffer */
-	shiftTxBufs(lowRateTxBufs, mChanM, sendCursor, lowRateTxBufs[0]->len);
-	sendCursor -= lowRateTxBufs[0]->len;
+	shiftTxBufs(InnerTxBufs, mChanM, sendCursor, InnerTxBufs[0]->len);
+	sendCursor -= InnerTxBufs[0]->len;
 	assert(sendCursor >= 0);
 }
 
