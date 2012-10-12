@@ -125,6 +125,59 @@ bool ChannelizerBase::deactivateChan(int num)
 	return mResampler->deactivateChan(num);
 }
 
+bool ChannelizerBase::initFFT()
+{
+	int len;
+	int flags = CXVEC_FLG_FFT_ALIGN;
+
+	if (fftInput || fftOutput || fftHandle)
+		return false;
+
+	len = chunkLen * mChanM;
+	fftInput = cxvec_alloc(len, 0, NULL, flags);
+
+	len = (chunkLen + mFiltLen) * mChanM;
+	fftOutput = cxvec_alloc(len, 0, NULL, flags);
+
+	if (!fftInput | !fftOutput) {
+		LOG(ERR) << "Memory allocation error";
+		return false;
+	}
+
+	cxvec_reset(fftInput);
+	cxvec_reset(fftOutput);
+
+	fftHandle = init_fft(0, mChanM, chunkLen, chunkLen + mFiltLen,
+			     fftInput, fftOutput, mFiltLen);
+
+	return true;
+}
+
+bool ChannelizerBase::mapBuffers()
+{
+	int idx;
+
+	if (!fftHandle) {
+		LOG(ERR) << "FFT buffers not initialized";
+		return false;
+	}
+
+	filtInputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	filtOutputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	if (!filtInputs | !filtOutputs)
+		return false;
+
+	for (int i = 0; i < mChanM; i++) {
+		idx = i * (chunkLen + mFiltLen);
+		filtInputs[i] =
+			cxvec_subvec(fftOutput, idx, mFiltLen, chunkLen);
+
+		idx = i * chunkLen;
+		filtOutputs[i] =
+			cxvec_subvec(fftInput, idx, 0, chunkLen);
+	}
+}
+
 /* 
  * Setup filterbank internals
  */
@@ -141,17 +194,6 @@ bool ChannelizerBase::init()
 		return false;
 	}
 
-	fftBuffer = cxvec_alloc(chunkLen * mChanM, 0, NULL, 0);
-	if (!fftBuffer) {
-		LOG(ERR) << "Memory allocation error";
-		return false;
-	}
-
-	fftHandle = init_fft(0, mChanM);
-	if (!fftHandle) {
-		LOG(ERR) << "Failed to initialize FFT";
-	}
-
 	mResampler = new Resampler(mP, mQ, mFiltLen, mChanM);
 	if (!mResampler->init()) {
 		LOG(ERR) << "Failed to initialize resampling filter";
@@ -164,33 +206,12 @@ bool ChannelizerBase::init()
 		cxvec_reset(history[i]);
 	}
 
-	/* 
-	 * Filterbank partition filter buffers
-	 * 
-	 * Input partition feeds into convolution and requires history
-	 * spanning the tap width - 1. We just use the full tap width for
-	 * convenience.
-	 *
-	 * Output partition feeds into downsampler and convolves from index
-	 * zero at tap zero with an output length equal to a high rate chunk.
-	 */
-	filtInputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
-	filtOutputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
-
-	if (!filtInputs | !filtOutputs) {
-		LOG(ERR) << "Memory allocation error";
+	if (!initFFT()) {
+		LOG(ERR) << "Failed to initialize FFT";
 		return false;
 	}
 
-	for (i = 0; i < mChanM; i++) {
-		filtInputs[i] = cxvec_alloc(chunkLen + mFiltLen,
-					    mFiltLen, NULL, 0);
-		filtOutputs[i] = cxvec_alloc(chunkLen + mFiltLen,
-					     mFiltLen, NULL, 0);
-
-		cxvec_reset(filtInputs[i]);
-		cxvec_reset(filtOutputs[i]);
-	}
+	mapBuffers();
 
 	return true;
 }
@@ -205,7 +226,8 @@ bool ChannelizerBase::init()
  */
 ChannelizerBase::ChannelizerBase(int wChanM, int wFiltLen,
 				 int wP, int wQ, int wMul, chanType type) 
-	: mChanM(wChanM), mFiltLen(wFiltLen), mP(wP), mQ(wQ), mMul(wMul)
+	: mChanM(wChanM), mFiltLen(wFiltLen), mP(wP), mQ(wQ), mMul(wMul),
+	  fftInput(NULL), fftOutput(NULL), fftHandle(NULL)
 {
 	if (type == TX_SYNTHESIS)
 		chunkLen = mP * mMul;
@@ -218,7 +240,6 @@ ChannelizerBase::~ChannelizerBase()
 	int i;
 
 	releaseFilters();
-	cxvec_free(fftBuffer);
 	free_fft(fftHandle);
 
 	for (i = 0; i < mChanM; i++) {

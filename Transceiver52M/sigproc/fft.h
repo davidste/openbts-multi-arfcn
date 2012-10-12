@@ -23,11 +23,15 @@
 #ifndef _FFT_H_
 #define _FFT_H_
 
+#include <stddef.h>
+#include "sigvec.h"
+
 struct fft_hdl;
 
-struct fft_hdl *init_fft(int reverse, int m);
+struct fft_hdl *init_fft(int reverse, int m, int istride, int ostride,
+			 struct cxvec *in, struct cxvec *out, int ooffset);
 void *fft_malloc(size_t size);
 void free_fft(struct fft_hdl *hdl);
-int cxvec_fft(struct fft_hdl *hdl, struct cxvec *in, struct cxvec *out);
+int cxvec_fft(struct fft_hdl *hdl);
 
 #endif /* _FFT_H_ */

@@ -40,7 +40,8 @@ protected:
 	struct cxvec **filtInputs;
 	struct cxvec **filtOutputs;
 	struct cxvec **history;
-	struct cxvec *fftBuffer;
+	struct cxvec *fftInput;
+	struct cxvec *fftOutput;
 
 	/* Pointer to opaque FFT instance */
 	struct fft_hdl *fftHandle;
@@ -50,6 +51,8 @@ protected:
 
 	/* Initializer internals */
 	bool initFilters();
+	bool initFFT();
+	bool mapBuffers();
 	void releaseFilters();
 
 	/* Direction */

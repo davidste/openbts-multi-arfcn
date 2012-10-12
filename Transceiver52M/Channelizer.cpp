@@ -54,8 +54,6 @@ static bool checkVectorLen(struct cxvec *in, struct cxvec **out,
  */
 int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 {
-	int i, len;
-
 	if (!checkVectorLen(in, out, mP, mQ, mMul)) {
 		return -1;
 	}
@@ -65,7 +63,7 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
-	for (i = 0; i < mChanM; i++) {	
+	for (int i = 0; i < mChanM; i++) {	
 		memcpy(filtInputs[i]->buf, history[i]->data,
 		       mFiltLen * sizeof(cmplx));
 
@@ -76,20 +74,12 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 		       mFiltLen * sizeof(cmplx));
 	}
 
-	/* 
-	 * Interleave convolution output into FFT
-	 * Deinterleave back into partition output buffers
-	 */
-	cxvec_interlv(filtOutputs, fftBuffer, mChanM);
-	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
-	cxvec_deinterlv_fw(fftBuffer, filtOutputs, mChanM);
+	cxvec_fft(fftHandle);
 
 	/* 
 	 * Downsample FFT output from channel rate multiple to GSM symbol rate
 	 */
-	len = mResampler->rotate(filtOutputs, out);
-
-	return len;
+	return mResampler->rotate(filtInputs, out);
 }
 
 /* Setup channelizer paramaters */

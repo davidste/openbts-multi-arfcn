@@ -54,26 +54,17 @@ static bool checkVectorLen(struct cxvec **in, struct cxvec *out,
  */
 int Synthesis::rotate(struct cxvec **in, struct cxvec *out)
 {
-	int i, rc;
-
 	if (!checkVectorLen(in, out, mP, mQ, mMul)) {
 		return -1;
 	}
 
-	mResampler->rotate(in, filtInputs);
-
-	/* 
-	 * Interleave resampled input into FFT
-	 * Deinterleave back into filterbank partition input buffers
-	 */
-	cxvec_interlv(filtInputs, fftBuffer, mChanM);
-	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
-	cxvec_deinterlv_fw(fftBuffer, filtInputs, mChanM);
+	mResampler->rotate(in, filtOutputs);
+	cxvec_fft(fftHandle);
 
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
-	for (i = 0; i < mChanM; i++) {	
+	for (int i = 0; i < mChanM; i++) {	
 		memcpy(filtInputs[i]->buf, history[i]->data,
 		       mFiltLen * sizeof(cmplx));
 

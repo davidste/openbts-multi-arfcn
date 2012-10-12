@@ -29,20 +29,41 @@
 #include "fft.h"
 
 struct fft_hdl {
-	fftwf_complex *fft_in;
-	fftwf_complex *fft_out;
+	struct cxvec *fft_in;
+	struct cxvec *fft_out;
 	fftwf_plan fft_plan;
-	int fft_len;
 };
 
 /*! \brief Initialize FFT backend 
  *  \param[in] reverse FFT direction
  *  \param[in] m FFT length 
+ *  \param[in] istride input stride count
+ *  \param[in] ostride output stride count
+ *  \param[in] in input buffer (FFTW aligned)
+ *  \param[in] out output buffer (FFTW aligned)
+ *  \param[in] ooffset initial offset into output buffer
  *
- * If the reverse is non-NULL, then an inverse FFT will be used.
+ * If the reverse is non-NULL, then an inverse FFT will be used. This is a
+ * wrapper for advanced non-contiguous FFTW usage. See FFTW documentation for
+ * further details.
+ *
+ *   http://www.fftw.org/doc/Advanced-Complex-DFTs.html
+ *
+ * It is currently unknown how the offset of the output buffer affects FFTW
+ * memory alignment.
  */
-struct fft_hdl *init_fft(int reverse, int m)
+struct fft_hdl *init_fft(int reverse, int m, int istride, int ostride,
+			 struct cxvec *in, struct cxvec *out, int ooffset)
 {
+	int rank = 1;
+	int n[] = { m };
+	int howmany = istride;
+	int idist = 1;
+	int odist = 1;
+	int *inembed = n;
+	int *onembed = n;
+	fftwf_complex *obuffer, *ibuffer;
+
 	struct fft_hdl *hdl = (struct fft_hdl *) malloc(sizeof(struct fft_hdl));
 	if (!hdl)
 		return NULL;
@@ -51,12 +72,15 @@ struct fft_hdl *init_fft(int reverse, int m)
 	if (reverse)
 		direction = FFTW_BACKWARD;
 
-	hdl->fft_in = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
-	hdl->fft_out = (fftwf_complex *) fftwf_malloc(sizeof(fftwf_complex) * m);
-	hdl->fft_plan = fftwf_plan_dft_1d(m, hdl->fft_in, hdl->fft_out,
-					  direction, FFTW_MEASURE);
-	hdl->fft_len = m;
-
+	ibuffer = (fftwf_complex *) in->data;
+	obuffer = (fftwf_complex *) out->data + ooffset;
+	
+	hdl->fft_in = in; 
+	hdl->fft_out = out; 
+	hdl->fft_plan = fftwf_plan_many_dft(rank, n, howmany,
+					    ibuffer, inembed, istride, idist,
+					    obuffer, onembed, ostride, odist,
+					    direction, FFTW_MEASURE);
 	return hdl;
 }
 
@@ -69,41 +93,19 @@ void *fft_malloc(size_t size)
  */
 void free_fft(struct fft_hdl *hdl)
 {
+	cxvec_free(hdl->fft_in);
+	cxvec_free(hdl->fft_out);
 	fftwf_destroy_plan(hdl->fft_plan);
-	fftwf_free(hdl->fft_in);
-	fftwf_free(hdl->fft_out);
-
 	free(hdl);
 }
 
-/*! \brief Iteratively run the FFT on a complex vector 
- *  \param[in] in Complex vector input
- *  \param[in] out Complex vector output
+/*! \brief Run multiple DFT operations with the initialized plan
+ *  \param[in] hdl handle to an intitialized fft struct
  *
- * The input length must be a multiple of the FFT length. Note that output
- * length is not verified. There is a copy to and from FFTW aligned memory.
+ * Input and output buffers are configured with init_fft().
  */
-int cxvec_fft(struct fft_hdl *hdl, struct cxvec *in, struct cxvec *out)
+int cxvec_fft(struct fft_hdl *hdl)
 {
-	int i;
-	int fft_len = hdl->fft_len;
-
-	if (in->len % fft_len) {
-		fprintf(stderr, "cxvec_fft: invalid input length\n");
-		fprintf(stderr, "in->len %i, fft_len: fft_len %i\n",
-			in->len, fft_len);
-		return -1;
-	}
-
-	for (i = 0; i < (in->len / fft_len); i++) {
-		memcpy(hdl->fft_in,
-		       &in->data[i * fft_len], fft_len * sizeof(cmplx));
-
-		fftwf_execute(hdl->fft_plan);
-
-		memcpy(&out->data[i * fft_len],
-		       hdl->fft_out, fft_len * sizeof(cmplx));
-	}
-
+	fftwf_execute(hdl->fft_plan);
 	return 0;
 }
