@@ -53,12 +53,12 @@ bool ChannelizerBase::initFilters()
 {
 	int i, n;
 	int m = mChanM;
-	int protoFilterLen = m * mPartitionLen;
+	int protoLen = m * mPartitionLen;
 
-	float *protoFilterBase;
+	float *proto;
 	float sum = 0.0f;
 	float scale = 0.0f;
-	float midpt = protoFilterLen / 2;
+	float midpt = protoLen / 2;
 
 	/* 
 	 * Allocate 'M' partition filters and the temporary prototype
@@ -67,8 +67,8 @@ bool ChannelizerBase::initFilters()
 	 */
 	int flags = CXVEC_FLG_REAL_ONLY | CXVEC_FLG_MEM_ALIGN;
 
-	protoFilterBase = (float *) malloc(protoFilterLen * sizeof(float));
-	if (!protoFilterBase)
+	proto = (float *) malloc(protoLen * sizeof(float));
+	if (!proto)
 		return false;
 
 	partitions = (struct cxvec **) malloc(sizeof(struct cxvec *) * m);
@@ -89,13 +89,13 @@ bool ChannelizerBase::initFilters()
 	float a2 = 0.14128;
 	float a3 = 0.01168;
 
-	for (i = 0; i < protoFilterLen; i++) {
-		protoFilterBase[i] = cxvec_sinc(((float) i - midpt) / m);
-		protoFilterBase[i] *= a0 -
-				      a1 * cos(2 * M_PI * i / (protoFilterLen - 1)) +
-				      a2 * cos(4 * M_PI * i / (protoFilterLen - 1)) -
-				      a3 * cos(6 * M_PI * i / (protoFilterLen - 1));
-		sum += protoFilterBase[i];
+	for (i = 0; i < protoLen; i++) {
+		proto[i] = cxvec_sinc(((float) i - midpt) / m);
+		proto[i] *= a0 -
+			    a1 * cos(2 * M_PI * i / (protoLen - 1)) +
+			    a2 * cos(4 * M_PI * i / (protoLen - 1)) -
+			    a3 * cos(6 * M_PI * i / (protoLen - 1));
+		sum += proto[i];
 	}
 	scale = mChanM / sum;
 
@@ -105,7 +105,7 @@ bool ChannelizerBase::initFilters()
 	 */
 	for (i = 0; i < mPartitionLen; i++) {
 		for (n = 0; n < m; n++) {
-			partitions[n]->data[i].real = protoFilterBase[i * m + n] * scale;
+			partitions[n]->data[i].real = proto[i * m + n] * scale;
 			partitions[n]->data[i].imag = 0.0f;
 		}
 	}
@@ -114,7 +114,7 @@ bool ChannelizerBase::initFilters()
 		cxvec_rvrs(partitions[i], partitions[i]);
 	}
 
-	free(protoFilterBase);
+	free(proto);
 
 	return true;
 }

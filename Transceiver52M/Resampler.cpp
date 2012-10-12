@@ -32,12 +32,12 @@
 bool Resampler::initFilters()
 {
 	int i, n;
-	int protoFilterLen = mP * mPartitionLen;
+	int protoLen = mP * mPartitionLen;
 
-	float *protoFiltBase;
+	float *proto;
 	float sum = 0.0f;
 	float scale = 0.0f;
-	float midpt = protoFilterLen / 2;
+	float midpt = protoLen / 2;
 
 	/* 
 	 * Allocate partition filters and the temporary prototype filter
@@ -46,8 +46,8 @@ bool Resampler::initFilters()
 	 */
 	int flags = CXVEC_FLG_REAL_ONLY | CXVEC_FLG_MEM_ALIGN;
 
-	protoFiltBase = (float *) malloc(protoFilterLen * sizeof(float));
-	if (!protoFiltBase)
+	proto = (float *) malloc(protoLen * sizeof(float));
+	if (!proto)
 		return false;
 
 	partitions = (struct cxvec **) malloc(sizeof(struct cxvec *) * mP);
@@ -67,13 +67,13 @@ bool Resampler::initFilters()
 	float a2 = 0.14128;
 	float a3 = 0.01168;
 
-	for (i = 0; i < protoFilterLen; i++) {
-		protoFiltBase[i] = cxvec_sinc(((float) i - midpt) / mP);
-		protoFiltBase[i] *= a0 -
-				    a1 * cos(2 * M_PI * i / (protoFilterLen - 1)) +
-				    a2 * cos(4 * M_PI * i / (protoFilterLen - 1)) -
-				    a3 * cos(6 * M_PI * i / (protoFilterLen - 1));
-		sum += protoFiltBase[i];
+	for (i = 0; i < protoLen; i++) {
+		proto[i] = cxvec_sinc(((float) i - midpt) / mP);
+		proto[i] *= a0 -
+			    a1 * cos(2 * M_PI * i / (protoLen - 1)) +
+			    a2 * cos(4 * M_PI * i / (protoLen - 1)) -
+			    a3 * cos(6 * M_PI * i / (protoLen - 1));
+		sum += proto[i];
 	}
 	scale = mP / sum;
 
@@ -83,7 +83,7 @@ bool Resampler::initFilters()
 	 */
 	for (i = 0; i < mPartitionLen; i++) {
 		for (n = 0; n < mP; n++) {
-			partitions[n]->data[i].real = protoFiltBase[i * mP + n] * scale;
+			partitions[n]->data[i].real = proto[i * mP + n] * scale;
 			partitions[n]->data[i].imag = 0.0f;
 		}
 	}
@@ -92,7 +92,7 @@ bool Resampler::initFilters()
 		cxvec_rvrs(partitions[i], partitions[i]);
 	}
 
-	free(protoFiltBase);
+	free(proto);
 
 	return true;
 }
