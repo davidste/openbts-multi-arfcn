@@ -27,7 +27,7 @@
 #include "Logger.h"
 #include "Resampler.h"
 
-#define MAX_OUTPUT_LEN		4096
+#define MAX_OUTPUT_LEN		(4096 * 4)
 
 bool Resampler::initFilters()
 {
