@@ -60,6 +60,11 @@ struct fft_hdl *init_fft(int reverse, int m)
 	return hdl;
 }
 
+void *fft_malloc(size_t size)
+{
+	return fftwf_malloc(size);
+}
+
 /*! \brief Free FFT backend resources 
  */
 void free_fft(struct fft_hdl *hdl)

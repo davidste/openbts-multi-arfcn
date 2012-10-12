@@ -26,6 +26,7 @@
 struct fft_hdl;
 
 struct fft_hdl *init_fft(int reverse, int m);
+void *fft_malloc(size_t size);
 void free_fft(struct fft_hdl *hdl);
 int cxvec_fft(struct fft_hdl *hdl, struct cxvec *in, struct cxvec *out);
 

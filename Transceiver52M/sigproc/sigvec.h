@@ -27,6 +27,7 @@
 
 #define CXVEC_FLG_REAL_ONLY	(1 << 0)
 #define CXVEC_FLG_MEM_ALIGN	(1 << 1)
+#define CXVEC_FLG_FFT_ALIGN	(1 << 2)
 
 #define M_PIf			(3.14159265358979323846264338327f)
 

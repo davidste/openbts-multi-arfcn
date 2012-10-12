@@ -30,6 +30,7 @@
 #include <math.h>
 
 #include "sigvec.h"
+#include "fft.h"
 
 /*
  * Memory alignment size if requested. SSE aligned loads require memory
@@ -73,6 +74,8 @@ struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
 	if (!buf) {
 		if (flags & CXVEC_FLG_MEM_ALIGN)
 			buf = (cmplx *) memalign(ALIGN_SZ, sizeof(cmplx) * len);
+		else if (flags & CXVEC_FLG_FFT_ALIGN)
+			buf = (cmplx *) fft_malloc(sizeof(cmplx) * len);
 		else
 			buf = (cmplx *) malloc(sizeof(cmplx) * len);
 	}
