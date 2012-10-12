@@ -50,7 +50,7 @@ protected:
 	int mResampLen;
 
 	/* Initializer internals */
-	bool initFilters(struct cxvec **protoFilter);
+	bool initFilters();
 	void releaseFilters();
 	void resetPartitions();
 
@@ -66,10 +66,9 @@ protected:
 
 public:
 	/** Initilize channelizer/synthesis filter internals
-	    @param prot_filt optional pointer reference to store prototype filter
 	    @return negative value on error, zero otherwise
 	 */
-	bool init(struct cxvec **protoFilter);
+	bool init();
 
 	/** Activate a specific channel of the internal resampler
 	    @param num channel number to activate

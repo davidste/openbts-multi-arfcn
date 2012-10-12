@@ -49,7 +49,7 @@ void ChannelizerBase::resetPartitions()
  * "harris, fred, Multirate Signal Processing, Upper Saddle River, NJ,
  *     Prentice Hall, 2006."
  */
-bool ChannelizerBase::initFilters(struct cxvec **protoFilter)
+bool ChannelizerBase::initFilters()
 {
 	int i, n;
 	int m = mChanM;
@@ -114,19 +114,6 @@ bool ChannelizerBase::initFilters(struct cxvec **protoFilter)
 		cxvec_rvrs(partitions[i], partitions[i]);
 	}
 
-	/*
-	 * If requested, return the complex vector prototype filter.
-	 */
-	if (protoFilter) {
-		*protoFilter = cxvec_alloc(protoFilterLen, 0, NULL, flags);
-		(*protoFilter)->flags = CXVEC_FLG_REAL_ONLY;
-
-		for (i = 0; i < protoFilterLen; i++) {
-			(*protoFilter)->data[i].real = protoFilterBase[i] * scale;
-			(*protoFilter)->data[i].imag = 0.0f;
-		}
-	}
-
 	free(protoFilterBase);
 
 	return true;
@@ -156,7 +143,7 @@ bool ChannelizerBase::deactivateChan(int num)
 /* 
  * Setup filterbank internals
  */
-bool ChannelizerBase::init(struct cxvec **protoFilterBase)
+bool ChannelizerBase::init()
 {
 	int i;
 
@@ -164,7 +151,7 @@ bool ChannelizerBase::init(struct cxvec **protoFilterBase)
 	 * Filterbank coefficients, fft plan, history, and output sample
 	 * rate conversion blocks
 	 */
-	if (!initFilters(protoFilterBase)) {
+	if (!initFilters()) {
 		LOG(ERR) << "Failed to initialize channelizing filter";
 		return false;
 	}
@@ -181,7 +168,7 @@ bool ChannelizerBase::init(struct cxvec **protoFilterBase)
 	}
 
 	mResampler = new Resampler(mP, mQ, mResampLen, mChanM);
-	if (!mResampler->init(NULL)) {
+	if (!mResampler->init()) {
 		LOG(ERR) << "Failed to initialize resampling filter";
 		return false;
 	}

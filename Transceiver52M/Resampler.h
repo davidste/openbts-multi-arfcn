@@ -37,7 +37,7 @@ private:
 	struct cxvec **partitions;
 	struct cxvec **history;
 
-	bool initFilters(struct cxvec **protoFilter);
+	bool initFilters();
 	void releaseFilters();
 	void computePath();
 
@@ -54,10 +54,9 @@ public:
 	~Resampler();
 
 	/** Initilize resampler filterbank 
-	    @param prot_filt optional pointer reference to store prototype filter
 	    @return negative value on error, zero otherwise
 	 */
-	bool init(struct cxvec **protoFilter);
+	bool init();
 
 	/** Rotate "commutator" and drive samples through filterbank
 	    @param in_vecs set of 'M' input vectors 

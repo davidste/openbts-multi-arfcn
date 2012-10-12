@@ -29,7 +29,7 @@
 
 #define MAX_OUTPUT_LEN		4096
 
-bool Resampler::initFilters(struct cxvec **protoFilter)
+bool Resampler::initFilters()
 {
 	int i, n;
 	int protoFilterLen = mP * mPartitionLen;
@@ -90,19 +90,6 @@ bool Resampler::initFilters(struct cxvec **protoFilter)
 
 	for (i = 0; i < mP; i++) {
 		cxvec_rvrs(partitions[i], partitions[i]);
-	}
-
-	/*
-	 * If requested, return the complex vector prototype filter.
-	 */
-	if (protoFilter) {
-		*protoFilter = cxvec_alloc(protoFilterLen, 0, NULL, flags);
-		(*protoFilter)->flags = CXVEC_FLG_REAL_ONLY;
-
-		for (i = 0; i < protoFilterLen; i++) {
-			(*protoFilter)->data[i].real = protoFiltBase[i] * scale;
-			(*protoFilter)->data[i].imag = 0.0f; 
-		}
 	}
 
 	free(protoFiltBase);
@@ -234,12 +221,12 @@ bool Resampler::deactivateChan(int num)
 	return true;
 }
 
-bool Resampler::init(struct cxvec **protoFilter)
+bool Resampler::init()
 {
 	int i, rc;
 
 	/* Filterbank internals */
-	rc = initFilters(protoFilter);
+	rc = initFilters();
 	if (rc < 0) {
 		LOG(ERR) << "Failed to create resampler filterbank";
 		return false;
