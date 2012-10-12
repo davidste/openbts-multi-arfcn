@@ -28,19 +28,6 @@
 #include "ChannelizerBase.h"
 #include "sigproc/sigproc.h"
 
-/* Reset filterbank input/output partition vectors */
-void ChannelizerBase::resetPartitions()
-{
-	int i;
-
-	for (i = 0; i < mChanM; i++) {
-		cxvec_reset(filtInputs[i]);
-		cxvec_reset(filtOutputs[i]);
-	}
-
-	cxvec_reset(fftBuffer);
-}
-
 /* 
  * Create polyphase filterbank
  *
@@ -200,6 +187,9 @@ bool ChannelizerBase::init()
 					    mFiltLen, NULL, 0);
 		filtOutputs[i] = cxvec_alloc(chunkLen + mFiltLen,
 					     mFiltLen, NULL, 0);
+
+		cxvec_reset(filtInputs[i]);
+		cxvec_reset(filtOutputs[i]);
 	}
 
 	return true;

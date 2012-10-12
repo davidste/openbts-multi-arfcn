@@ -51,7 +51,6 @@ protected:
 	/* Initializer internals */
 	bool initFilters();
 	void releaseFilters();
-	void resetPartitions();
 
 	/* Direction */
 	enum chanType {

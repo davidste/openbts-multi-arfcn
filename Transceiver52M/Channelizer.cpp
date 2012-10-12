@@ -60,10 +60,6 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 		return -1;
 	}
 
-	/* 
-	 * Reset and load parition vectors from input vector
-	 */
-	resetPartitions();
 	cxvec_deinterlv_rv(in, filtInputs, mChanM);
 
 	/* 

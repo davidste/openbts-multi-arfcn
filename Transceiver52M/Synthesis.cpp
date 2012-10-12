@@ -60,10 +60,6 @@ int Synthesis::rotate(struct cxvec **in, struct cxvec *out)
 		return -1;
 	}
 
-	/*
-	 * Resample inputs from GSM rate to a multiple of channel spacing
-	 */
-	resetPartitions();
 	mResampler->rotate(in, filtInputs);
 
 	/* 
