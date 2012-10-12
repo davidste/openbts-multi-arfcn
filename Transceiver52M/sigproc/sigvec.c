@@ -78,11 +78,36 @@ struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
 			buf = (cmplx *) fft_malloc(sizeof(cmplx) * len);
 		else
 			buf = (cmplx *) malloc(sizeof(cmplx) * len);
+	} else {
+		flags |= CXVEC_FLG_MEM_CHILD;
 	}
 
 	cxvec_init(vec, len - start, len, start, buf, flags);
 
 	return vec;
+}
+
+/*! \brief Allocate and initialize a complex subvector
+ *
+ *  Only the buffer itself is allocated. The underlying buffer belongs to
+ *  the parent vector.
+ */
+struct cxvec *cxvec_subvec(struct cxvec *vec, int start, int head, int len)
+{
+	struct cxvec *subvec;
+	int flags = vec->flags;
+
+	if ((start + len) > vec->len) {
+		fprintf(stderr, "cxvec_subvec: invalid indices\n");
+		return NULL;
+	}
+
+	subvec = (struct cxvec *) malloc(sizeof(struct cxvec));
+
+	flags |= CXVEC_FLG_MEM_CHILD;
+	cxvec_init(subvec, len, head + len, head, &vec->data[start], flags);
+
+	return subvec;
 }
 
 /*! \brief Free a complex vector 
@@ -95,7 +120,7 @@ struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
  */
 void cxvec_free(struct cxvec *vec)
 {
-	if (vec->buf)
+	if (!(vec->flags & CXVEC_FLG_MEM_CHILD) && vec->buf)
 		free(vec->buf);
 
 	free(vec);

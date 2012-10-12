@@ -28,6 +28,7 @@
 #define CXVEC_FLG_REAL_ONLY	(1 << 0)
 #define CXVEC_FLG_MEM_ALIGN	(1 << 1)
 #define CXVEC_FLG_FFT_ALIGN	(1 << 2)
+#define CXVEC_FLG_MEM_CHILD	(1 << 3)
 
 #define M_PIf			(3.14159265358979323846264338327f)
 
@@ -54,6 +55,7 @@ enum cxvec_conv_type {
 
 /* Complex vectors */
 struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags);
+struct cxvec *cxvec_subvec(struct cxvec *vec, int head, int start, int end);
 void cxvec_free(struct cxvec *vec);
 void cxvec_reset(struct cxvec *vec);
 int cxvec_rvrs(struct cxvec *in, struct cxvec *out);
