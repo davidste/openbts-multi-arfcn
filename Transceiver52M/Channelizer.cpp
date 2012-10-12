@@ -71,13 +71,13 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	 */
 	for (i = 0; i < mChanM; i++) {	
 		memcpy(partInputs[i]->buf, history[i]->data,
-		       mPartitionLen * sizeof(cmplx));
+		       mFiltLen * sizeof(cmplx));
 
 		cxvec_convolve(partInputs[i], partitions[i], partOutputs[i]);
 
 		memcpy(history[i]->data,
-		       &partInputs[i]->data[partInputs[i]->len - mPartitionLen],
-		       mPartitionLen * sizeof(cmplx));
+		       &partInputs[i]->data[partInputs[i]->len - mFiltLen],
+		       mFiltLen * sizeof(cmplx));
 	}
 
 	/* 
@@ -97,10 +97,8 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 }
 
 /* Setup channelizer paramaters */
-Channelizer::Channelizer(int wChanM, int wPartitionLen, int wResampLen,
-			 int wP, int wQ, int wMul) 
-	: ChannelizerBase(wChanM, wPartitionLen, wResampLen,
-			  wP, wQ, wMul, RX_CHANNELIZER)
+Channelizer::Channelizer(int wChanM, int wFiltLen, int wP, int wQ, int wMul) 
+	: ChannelizerBase(wChanM, wFiltLen, wP, wQ, wMul, RX_CHANNELIZER)
 {
 }
 

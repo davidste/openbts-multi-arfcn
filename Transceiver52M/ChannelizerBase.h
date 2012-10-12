@@ -33,7 +33,7 @@ protected:
 
 	/* Channelizer parameters */
 	int mChanM;
-	int mPartitionLen;
+	int mFiltLen;
 
 	/* Channelizer internal filterbank buffers */
 	struct cxvec **partitions;
@@ -47,7 +47,6 @@ protected:
 
 	/* Output sample rate converter */
 	Resampler *mResampler;
-	int mResampLen;
 
 	/* Initializer internals */
 	bool initFilters();
@@ -60,7 +59,7 @@ protected:
 		TX_SYNTHESIS
 	};
 
-	ChannelizerBase(int wChanM, int wPartitionLen, int wResampLen,
+	ChannelizerBase(int wChanM, int wFiltLen,
 			int wP, int wQ, int wMul, chanType type);
 	~ChannelizerBase();
 

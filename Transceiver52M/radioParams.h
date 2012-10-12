@@ -36,7 +36,7 @@
 /* Resampler settings */
 #define RESAMP_INRATE		(65 * SAMPSPERSYM * SAMPSPERSYM)
 #define RESAMP_OUTRATE		(96 * SAMPSPERSYM)
-#define RESAMP_FILT_LEN		8
+#define RESAMP_FILT_LEN		CHAN_FILT_LEN
 
 #ifndef MULTICHAN
 #  ifndef RESAMPLE

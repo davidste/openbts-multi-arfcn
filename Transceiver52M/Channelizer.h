@@ -27,14 +27,12 @@ class Channelizer : public ChannelizerBase {
 public:
 	/** Constructor for channelizing filter bank
 	    @param wM number of channels
-	    @param wChanLen length of each channelizer partition filter
-	    @param wResampLen length of each resampler partition filter
+	    @param wFiltLen length of each polyphase subfilter
 	    @param wP numerator of resampling ratio
 	    @param wQ denominator of resampling ratio
 	    @param wMul ratio multiplier 
 	*/
-	Channelizer(int wM, int wChanLen, int wResampLen,
-		    int wP, int wQ, int wMul);
+	Channelizer(int wM, int wFiltLen, int wP, int wQ, int wMul);
 	~Channelizer();
 
 	/** Rotate "input commutator" and drive samples through filterbank

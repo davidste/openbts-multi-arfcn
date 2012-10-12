@@ -27,14 +27,12 @@ class Synthesis : public ChannelizerBase {
 public:
 	/** Constructor for synthesis filterbank
 	    @param wChanM number of channels
-	    @param wPartitionLen length of each channelizer partition filter
-	    @param wResampLen length of each resampler partition filter
+	    @param wFiltLen length of each polyphase subfilter
 	    @param wP numerator of resampling ratio
 	    @param wQ denominator of resampling ratio
 	    @param mMul ratio multiplification factor
 	*/
-	Synthesis(int wChanM, int wPartitionLen, int wResampLen,
-		  int wP, int wQ, int mMul);
+	Synthesis(int wChanM, int wFiltLen, int wP, int wQ, int mMul);
 	~Synthesis();
 
 	/** Rotate "output commutator" and drive samples through filterbank

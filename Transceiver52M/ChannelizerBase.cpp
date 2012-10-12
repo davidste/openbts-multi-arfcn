@@ -53,7 +53,7 @@ bool ChannelizerBase::initFilters()
 {
 	int i, n;
 	int m = mChanM;
-	int protoLen = m * mPartitionLen;
+	int protoLen = m * mFiltLen;
 
 	float *proto;
 	float sum = 0.0f;
@@ -76,7 +76,7 @@ bool ChannelizerBase::initFilters()
 		return false;
 
 	for (i = 0; i < m; i++) {
-		partitions[i] = cxvec_alloc(mPartitionLen, 0, NULL, flags);
+		partitions[i] = cxvec_alloc(mFiltLen, 0, NULL, flags);
 	}
 
 	/* 
@@ -103,7 +103,7 @@ bool ChannelizerBase::initFilters()
 	 * Populate partition filters and reverse the coefficients per
 	 * convolution requirements.
 	 */
-	for (i = 0; i < mPartitionLen; i++) {
+	for (i = 0; i < mFiltLen; i++) {
 		for (n = 0; n < m; n++) {
 			partitions[n]->data[i].real = proto[i * m + n] * scale;
 			partitions[n]->data[i].imag = 0.0f;
@@ -167,7 +167,7 @@ bool ChannelizerBase::init()
 		LOG(ERR) << "Failed to initialize FFT";
 	}
 
-	mResampler = new Resampler(mP, mQ, mResampLen, mChanM);
+	mResampler = new Resampler(mP, mQ, mFiltLen, mChanM);
 	if (!mResampler->init()) {
 		LOG(ERR) << "Failed to initialize resampling filter";
 		return false;
@@ -175,7 +175,7 @@ bool ChannelizerBase::init()
 
 	history = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
 	for (i = 0; i < mChanM; i++) {
-		history[i] =  cxvec_alloc(mPartitionLen, 0, NULL, 0);
+		history[i] =  cxvec_alloc(mFiltLen, 0, NULL, 0);
 		cxvec_reset(history[i]);
 	}
 
@@ -198,10 +198,10 @@ bool ChannelizerBase::init()
 	}
 
 	for (i = 0; i < mChanM; i++) {
-		partInputs[i] = cxvec_alloc(chunkLen + mPartitionLen,
-					    mPartitionLen, NULL, 0);
-		partOutputs[i] = cxvec_alloc(chunkLen + mResampLen,
-					     mResampLen, NULL, 0);
+		partInputs[i] = cxvec_alloc(chunkLen + mFiltLen,
+					    mFiltLen, NULL, 0);
+		partOutputs[i] = cxvec_alloc(chunkLen + mFiltLen,
+					     mFiltLen, NULL, 0);
 	}
 
 	return true;
@@ -215,10 +215,9 @@ bool ChannelizerBase::init()
  * channel rate may be higher or lower than the transceiver rate
  * depending on samples-per-symbol and channel bandwidth. 
  */
-ChannelizerBase::ChannelizerBase(int wChanM, int wPartitionLen, int wResampLen,
+ChannelizerBase::ChannelizerBase(int wChanM, int wFiltLen,
 				 int wP, int wQ, int wMul, chanType type) 
-	: mChanM(wChanM), mPartitionLen(wPartitionLen), mResampLen(wResampLen),
-	  mP(wP), mQ(wQ), mMul(wMul)
+	: mChanM(wChanM), mFiltLen(wFiltLen), mP(wP), mQ(wQ), mMul(wMul)
 {
 	if (type == TX_SYNTHESIS)
 		chunkLen = mP * mMul;

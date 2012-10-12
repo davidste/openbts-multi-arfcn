@@ -54,14 +54,14 @@ bool RadioInterface::init()
 {
 	int i;
 
-	chan = new Channelizer(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
+	chan = new Channelizer(mChanM, CHAN_FILT_LEN,
 			       RESAMP_INRATE, RESAMP_OUTRATE, CHUNKMUL);
 	if (!chan->init()) {
 		LOG(ALERT) << "Rx channelizer failed to initialize";
 		return false;
 	}
 
-	synth = new Synthesis(mChanM, CHAN_FILT_LEN, RESAMP_FILT_LEN,
+	synth = new Synthesis(mChanM, CHAN_FILT_LEN,
 			      RESAMP_OUTRATE, RESAMP_INRATE, CHUNKMUL);
 	if (!synth->init()) {
 		LOG(ALERT) << "Tx channelizer failed to initialize";

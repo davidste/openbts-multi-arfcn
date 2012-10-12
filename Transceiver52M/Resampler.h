@@ -28,7 +28,7 @@ private:
 	int mP;
 	int mQ;
 	int mChanM;
-	int mPartitionLen;
+	int mFiltLen;
 
 	bool *chanActive;
 	int *inputIndex;
@@ -47,10 +47,10 @@ public:
 	/** Constructor for 'M' channel rational resampler 
 	    @param wP numerator of resampling ratio
 	    @param wQ denominator of resampling ratio
-	    @param wPartitionLen length of each partition filters
+	    @param wFiltLen length of each polyphase subfilter 
 	    @param wM number of channels
 	*/
-	Resampler(int wP, int wQ, int wPartitionLen, int wChanM);
+	Resampler(int wP, int wQ, int wFiltLen, int wChanM);
 	~Resampler();
 
 	/** Initilize resampler filterbank 

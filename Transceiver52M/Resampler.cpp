@@ -32,7 +32,7 @@
 bool Resampler::initFilters()
 {
 	int i, n;
-	int protoLen = mP * mPartitionLen;
+	int protoLen = mP * mFiltLen;
 
 	float *proto;
 	float sum = 0.0f;
@@ -55,7 +55,7 @@ bool Resampler::initFilters()
 		return false;
 
 	for (i = 0; i < mP; i++)
-		partitions[i] = cxvec_alloc(mPartitionLen, 0, NULL, flags);
+		partitions[i] = cxvec_alloc(mFiltLen, 0, NULL, flags);
 
 	/* 
 	 * Generate the prototype filter with a Blackman-harris window.
@@ -81,7 +81,7 @@ bool Resampler::initFilters()
 	 * Populate partition filters and reverse the coefficients per
 	 * convolution requirements.
 	 */
-	for (i = 0; i < mPartitionLen; i++) {
+	for (i = 0; i < mFiltLen; i++) {
 		for (n = 0; n < mP; n++) {
 			partitions[n]->data[i].real = proto[i * mP + n] * scale;
 			partitions[n]->data[i].imag = 0.0f;
@@ -240,7 +240,7 @@ bool Resampler::init()
 	}
 
 	for (i = 0; i < mChanM; i++) {
-		history[i] = cxvec_alloc(mPartitionLen, 0, NULL, 0);
+		history[i] = cxvec_alloc(mFiltLen, 0, NULL, 0);
 		cxvec_reset(history[i]);
 	}
 
@@ -263,10 +263,9 @@ bool Resampler::init()
 	return true;
 }
 
-Resampler::Resampler(int wP, int wQ, int wPartitionLen, int wChanM)
-	: mP(wP), mQ(wQ),
-	  mPartitionLen(wPartitionLen), mChanM(wChanM),
-	  inputIndex(NULL), outputPath(NULL)
+Resampler::Resampler(int wP, int wQ, int wFiltLen, int wChanM)
+	: mP(wP), mQ(wQ), mFiltLen(wFiltLen),
+	  mChanM(wChanM), inputIndex(NULL), outputPath(NULL)
 {
 }
 
