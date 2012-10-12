@@ -176,12 +176,13 @@ int Resampler::rotateSingle(struct cxvec *in, struct cxvec *out, struct cxvec *h
 
 int Resampler::rotate(struct cxvec **in, struct cxvec **out)
 {
-	int i, len;
+	int len = 0;
 
-	for (i = 0; i < mChanM; i++) {
-		if (chanActive[i]) {
+	for (int i = 0; i < mChanM; i++) {
+		if (chanActive[i])
 			len = rotateSingle(in[i], out[i], history[i]);
-		}
+		else
+			cxvec_reset(out[i]);
 	}
 
 	return len;
