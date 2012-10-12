@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 		LOG(ALERT) << "Rx burst timing may not be accurate"; 
 	}
 
-	double deviceRate = chanM * CHAN_RATE;
+	double deviceRate = chanM * CHAN_RATE * DEV_RESAMP_OUTRATE / DEV_RESAMP_INRATE;
 	usrp = RadioDevice::make(deviceRate, rxOffset, DEVICE_TX_AMPL / numARFCN);
 	if (!usrp->open()) {
 		LOG(ALERT) << "Failed to open device, exiting...";
