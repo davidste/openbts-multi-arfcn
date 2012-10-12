@@ -64,19 +64,19 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	 * Reset and load parition vectors from input vector
 	 */
 	resetPartitions();
-	cxvec_deinterlv_rv(in, partInputs, mChanM);
+	cxvec_deinterlv_rv(in, filtInputs, mChanM);
 
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
 	for (i = 0; i < mChanM; i++) {	
-		memcpy(partInputs[i]->buf, history[i]->data,
+		memcpy(filtInputs[i]->buf, history[i]->data,
 		       mFiltLen * sizeof(cmplx));
 
-		cxvec_convolve(partInputs[i], partitions[i], partOutputs[i]);
+		cxvec_convolve(filtInputs[i], subFilters[i], filtOutputs[i]);
 
 		memcpy(history[i]->data,
-		       &partInputs[i]->data[partInputs[i]->len - mFiltLen],
+		       &filtInputs[i]->data[filtInputs[i]->len - mFiltLen],
 		       mFiltLen * sizeof(cmplx));
 	}
 
@@ -84,14 +84,14 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	 * Interleave convolution output into FFT
 	 * Deinterleave back into partition output buffers
 	 */
-	cxvec_interlv(partOutputs, fftBuffer, mChanM);
+	cxvec_interlv(filtOutputs, fftBuffer, mChanM);
 	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
-	cxvec_deinterlv_fw(fftBuffer, partOutputs, mChanM);
+	cxvec_deinterlv_fw(fftBuffer, filtOutputs, mChanM);
 
 	/* 
 	 * Downsample FFT output from channel rate multiple to GSM symbol rate
 	 */
-	len = mResampler->rotate(partOutputs, out);
+	len = mResampler->rotate(filtOutputs, out);
 
 	return len;
 }

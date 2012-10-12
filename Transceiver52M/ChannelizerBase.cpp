@@ -34,8 +34,8 @@ void ChannelizerBase::resetPartitions()
 	int i;
 
 	for (i = 0; i < mChanM; i++) {
-		cxvec_reset(partInputs[i]);
-		cxvec_reset(partOutputs[i]);
+		cxvec_reset(filtInputs[i]);
+		cxvec_reset(filtOutputs[i]);
 	}
 
 	cxvec_reset(fftBuffer);
@@ -71,12 +71,12 @@ bool ChannelizerBase::initFilters()
 	if (!proto)
 		return false;
 
-	partitions = (struct cxvec **) malloc(sizeof(struct cxvec *) * m);
-	if (!partitions)
+	subFilters = (struct cxvec **) malloc(sizeof(struct cxvec *) * m);
+	if (!subFilters)
 		return false;
 
 	for (i = 0; i < m; i++) {
-		partitions[i] = cxvec_alloc(mFiltLen, 0, NULL, flags);
+		subFilters[i] = cxvec_alloc(mFiltLen, 0, NULL, flags);
 	}
 
 	/* 
@@ -105,13 +105,13 @@ bool ChannelizerBase::initFilters()
 	 */
 	for (i = 0; i < mFiltLen; i++) {
 		for (n = 0; n < m; n++) {
-			partitions[n]->data[i].real = proto[i * m + n] * scale;
-			partitions[n]->data[i].imag = 0.0f;
+			subFilters[n]->data[i].real = proto[i * m + n] * scale;
+			subFilters[n]->data[i].imag = 0.0f;
 		}
 	}
 
 	for (i = 0; i < m; i++) {
-		cxvec_rvrs(partitions[i], partitions[i]);
+		cxvec_rvrs(subFilters[i], subFilters[i]);
 	}
 
 	free(proto);
@@ -121,13 +121,11 @@ bool ChannelizerBase::initFilters()
 
 void ChannelizerBase::releaseFilters()
 {
-	int i;
-
-	for (i = 0; i < mChanM; i++) {
-		cxvec_free(partitions[i]);
+	for (int i = 0; i < mChanM; i++) {
+		cxvec_free(subFilters[i]);
 	}
 
-	free(partitions);
+	free(subFilters);
 }
 
 bool ChannelizerBase::activateChan(int num)
@@ -189,18 +187,18 @@ bool ChannelizerBase::init()
 	 * Output partition feeds into downsampler and convolves from index
 	 * zero at tap zero with an output length equal to a high rate chunk.
 	 */
-	partInputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
-	partOutputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	filtInputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
+	filtOutputs = (struct cxvec **) malloc(sizeof(struct cxvec *) * mChanM);
 
-	if (!partInputs | !partOutputs) {
+	if (!filtInputs | !filtOutputs) {
 		LOG(ERR) << "Memory allocation error";
 		return false;
 	}
 
 	for (i = 0; i < mChanM; i++) {
-		partInputs[i] = cxvec_alloc(chunkLen + mFiltLen,
+		filtInputs[i] = cxvec_alloc(chunkLen + mFiltLen,
 					    mFiltLen, NULL, 0);
-		partOutputs[i] = cxvec_alloc(chunkLen + mFiltLen,
+		filtOutputs[i] = cxvec_alloc(chunkLen + mFiltLen,
 					     mFiltLen, NULL, 0);
 	}
 
@@ -234,12 +232,12 @@ ChannelizerBase::~ChannelizerBase()
 	free_fft(fftHandle);
 
 	for (i = 0; i < mChanM; i++) {
-		cxvec_free(partInputs[i]);
-		cxvec_free(partOutputs[i]);
+		cxvec_free(filtInputs[i]);
+		cxvec_free(filtOutputs[i]);
 		cxvec_free(history[i]);
 	}
 
-	free(partInputs);
-	free(partOutputs);
+	free(filtInputs);
+	free(filtOutputs);
 	free(history);
 }

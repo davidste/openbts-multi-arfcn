@@ -36,9 +36,9 @@ protected:
 	int mFiltLen;
 
 	/* Channelizer internal filterbank buffers */
-	struct cxvec **partitions;
-	struct cxvec **partInputs;
-	struct cxvec **partOutputs;
+	struct cxvec **subFilters;
+	struct cxvec **filtInputs;
+	struct cxvec **filtOutputs;
 	struct cxvec **history;
 	struct cxvec *fftBuffer;
 

@@ -64,34 +64,34 @@ int Synthesis::rotate(struct cxvec **in, struct cxvec *out)
 	 * Resample inputs from GSM rate to a multiple of channel spacing
 	 */
 	resetPartitions();
-	mResampler->rotate(in, partInputs);
+	mResampler->rotate(in, filtInputs);
 
 	/* 
 	 * Interleave resampled input into FFT
 	 * Deinterleave back into filterbank partition input buffers
 	 */
-	cxvec_interlv(partInputs, fftBuffer, mChanM);
+	cxvec_interlv(filtInputs, fftBuffer, mChanM);
 	cxvec_fft(fftHandle, fftBuffer, fftBuffer);
-	cxvec_deinterlv_fw(fftBuffer, partInputs, mChanM);
+	cxvec_deinterlv_fw(fftBuffer, filtInputs, mChanM);
 
 	/* 
 	 * Convolve through filterbank while applying and saving sample history 
 	 */
 	for (i = 0; i < mChanM; i++) {	
-		memcpy(partInputs[i]->buf, history[i]->data,
+		memcpy(filtInputs[i]->buf, history[i]->data,
 		       mFiltLen * sizeof(cmplx));
 
-		cxvec_convolve(partInputs[i], partitions[i], partOutputs[i]);
+		cxvec_convolve(filtInputs[i], subFilters[i], filtOutputs[i]);
 
 		memcpy(history[i]->data,
-		       &partInputs[i]->data[partInputs[i]->len - mFiltLen],
+		       &filtInputs[i]->data[filtInputs[i]->len - mFiltLen],
 		       mFiltLen * sizeof(cmplx));
 	}
 
 	/* 
 	 * Interleave into output vector
 	 */
-	cxvec_interlv(partOutputs, out, mChanM);
+	cxvec_interlv(filtOutputs, out, mChanM);
 
 	return out->len;
 }
