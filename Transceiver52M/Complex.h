@@ -134,7 +134,7 @@ public:
 
 /**@name standard Complex manifestations */
 //@{
-typedef Complex<float> complex;
+typedef Complex<float> fcomplex;
 typedef Complex<double> dcomplex;
 typedef Complex<short> complex16;
 typedef Complex<long> complex32;
