@@ -65,13 +65,13 @@ int Channelizer::rotate(struct cxvec *in, struct cxvec **out)
 	 */
 	for (int i = 0; i < mChanM; i++) {	
 		memcpy(filtInputs[i]->buf, history[i]->data,
-		       mFiltLen * sizeof(cmplx));
+		       mFiltLen * sizeof(float complex));
 
 		cxvec_convolve(filtInputs[i], subFilters[i], filtOutputs[i]);
 
 		memcpy(history[i]->data,
 		       &filtInputs[i]->data[filtInputs[i]->len - mFiltLen],
-		       mFiltLen * sizeof(cmplx));
+		       mFiltLen * sizeof(float complex));
 	}
 
 	cxvec_fft(fftHandle);

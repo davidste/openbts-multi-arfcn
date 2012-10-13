@@ -41,7 +41,7 @@
 #define ALIGN_SZ		16
 
 static void cxvec_init(struct cxvec *vec, int len, int buf_len,
-		       int start, cmplx *buf, int flags)
+		       int start, float complex *buf, int flags)
 {
 	vec->len = len;
 	vec->buf_len = buf_len;
@@ -59,7 +59,7 @@ static void cxvec_init(struct cxvec *vec, int len, int buf_len,
  *
  *  If buf is NULL, then a buffer will be allocated.
  */
-struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
+struct cxvec *cxvec_alloc(int len, int start, float complex *buf, int flags)
 {
 	struct cxvec *vec;
 
@@ -73,11 +73,11 @@ struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags)
 
 	if (!buf) {
 		if (flags & CXVEC_FLG_MEM_ALIGN)
-			buf = (cmplx *) memalign(ALIGN_SZ, sizeof(cmplx) * len);
+			buf = (float complex *) memalign(ALIGN_SZ, sizeof(float complex) * len);
 		else if (flags & CXVEC_FLG_FFT_ALIGN)
-			buf = (cmplx *) fft_malloc(sizeof(cmplx) * len);
+			buf = (float complex *) fft_malloc(sizeof(float complex) * len);
 		else
-			buf = (cmplx *) malloc(sizeof(cmplx) * len);
+			buf = (float complex *) malloc(sizeof(float complex) * len);
 	} else {
 		flags |= CXVEC_FLG_MEM_CHILD;
 	}
@@ -133,7 +133,7 @@ void cxvec_free(struct cxvec *vec)
  */
 void cxvec_reset(struct cxvec *vec)
 {
-	memset(vec->buf, 0, vec->buf_len * sizeof(cmplx));
+	memset(vec->buf, 0, vec->buf_len * sizeof(float complex));
 }
 
 /*! \brief Deinterleave M complex vectors with forward loading
@@ -207,12 +207,10 @@ int cxvec_rvrs(struct cxvec *in, struct cxvec *out)
 	int i;
 	struct cxvec *rev = cxvec_alloc(in->len, 0, NULL, 0);
 
-	for (i = 0; i < in->len; i++) {
-		rev->data[i].real = in->data[in->len - 1 - i].real;
-		rev->data[i].imag = in->data[in->len - 1 - i].imag;
-	}
+	for (i = 0; i < in->len; i++)
+		rev->data[i] = in->data[in->len - 1 - i];
 
-	memcpy(out->data, rev->data, in->len * sizeof(cmplx));
+	memcpy(out->data, rev->data, in->len * sizeof(float complex));
 
 	cxvec_free(rev);
 
@@ -261,7 +259,7 @@ int cxvec_cp(struct cxvec *dst, struct cxvec *src)
 		return -1;
 	}
 
-	memcpy(dst->data, src->data, sizeof(cmplx) * src->len);
+	memcpy(dst->data, src->data, sizeof(float complex) * src->len);
 
 	return src->len;
 }
@@ -283,10 +281,8 @@ int cxvec_sub(struct cxvec *a, struct cxvec *b, struct cxvec *out)
 		return -1;
 	}
 
-	for (i = 0; i < a->len; i++) {
-		out->data[i].real = a->data[i].real - b->data[i].real;
-		out->data[i].imag = a->data[i].imag - b->data[i].imag;
-	}
+	for (i = 0; i < a->len; i++)
+		out->data[i] = a->data[i] * b->data[i];
 
 	return a->len;
 }

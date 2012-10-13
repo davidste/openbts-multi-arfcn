@@ -98,9 +98,9 @@ bool RadioInterface::init()
 		}
 
 		InnerRxBufs[i] =
-			cxvec_alloc(2 * 625, 0, (cmplx *) rcvBuffer[i], 0);
+			cxvec_alloc(2 * 625, 0, (float complex *) rcvBuffer[i], 0);
 		InnerTxBufs[i] =
-			cxvec_alloc(2 * 625, GSM_RESAMP_FILT_LEN, (cmplx *) sendBuffer[i], 0);
+			cxvec_alloc(2 * 625, GSM_RESAMP_FILT_LEN, (float complex *) sendBuffer[i], 0);
 	}
 
 	return true;
@@ -161,7 +161,7 @@ static void shiftTxBufs(struct cxvec **vecs, int chanM, int len, int n)
 
 	for (i = 0; i < chanM; i++) {
 		memmove(vecs[i]->data, &vecs[i]->data[n],
-			(len - n) * sizeof(cmplx));
+			(len - n) * sizeof(float complex));
 	}
 }
 

@@ -51,8 +51,8 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
 		   struct cxvec *restrict out_vec)
 {
 	int i;
-	cmplx *a, *h, *c;
-	void (*mac_func)(cmplx *, cmplx *, cmplx *, int);
+	float complex *a, *h, *c;
+	void (*mac_func)(float complex *, float complex *, float complex *, int);
 
 	if (in_vec->len < out_vec->len) { 
 		fprintf(stderr, "convolve: Invalid vector length\n");
@@ -79,7 +79,7 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
 	c = out_vec->data;	/* output */
 
 	/* Reset output */
-	memset(c, 0, out_vec->len * sizeof(cmplx));
+	memset(c, 0, out_vec->len * sizeof(float complex));
 
 	for (i = 0; i < out_vec->len; i++) {
 		(*mac_func)(&a[i - (h_vec->len - 1)], h, &c[i], h_vec->len);
@@ -97,12 +97,12 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
  * and output. The rules for the normal complex convolution apply here as well.
  * Arguably, this is currently a convenience hack.
  */
-int single_convolve(cmplx *restrict in,
+int single_convolve(float complex *restrict in,
 		    struct cxvec *restrict h,
-		    cmplx *restrict out)
+		    float complex *restrict out)
 {
 	int i;
-	void (*mac_func)(cmplx *, cmplx *, cmplx *, int);
+	void (*mac_func)(float complex *, float complex *, float complex *, int);
 
 	if (!(h->flags & CXVEC_FLG_REAL_ONLY)) {
 		fprintf(stderr, "convolve: Filter taps must be real\n");
@@ -114,8 +114,7 @@ int single_convolve(cmplx *restrict in,
 		mac_func = mac_real_vec_n;
 	}
 
-	out->real = 0.0f;
-	out->imag = 0.0f;
+	out = 0.0f;
 
 	(*mac_func)(&in[- (h->len - 1)], h->data, out, h->len);
 

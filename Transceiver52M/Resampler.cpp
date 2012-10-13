@@ -83,8 +83,7 @@ bool Resampler::initFilters()
 	 */
 	for (i = 0; i < mFiltLen; i++) {
 		for (n = 0; n < mP; n++) {
-			partitions[n]->data[i].real = proto[i * mP + n] * scale;
-			partitions[n]->data[i].imag = 0.0f;
+			partitions[n]->data[i] = proto[i * mP + n] * scale;
 		}
 	}
 
@@ -155,7 +154,7 @@ int Resampler::rotateSingle(struct cxvec *in, struct cxvec *out, struct cxvec *h
 		return -1; 
 
 	/* Insert history */
-	memcpy(in->buf, hist->data, hist->len * sizeof(cmplx));
+	memcpy(in->buf, hist->data, hist->len * sizeof(float complex));
 
 	/* Generate output from precomputed input/output paths */
 	for (i = 0; i < out->len; i++) {
@@ -169,7 +168,7 @@ int Resampler::rotateSingle(struct cxvec *in, struct cxvec *out, struct cxvec *h
 
 	/* Save history */
 	memcpy(hist->data, &in->data[in->len - hist->len],
-	       hist->len * sizeof(cmplx));
+	       hist->len * sizeof(float complex));
 
 	return out->len;
 }

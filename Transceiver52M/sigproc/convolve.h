@@ -26,21 +26,20 @@
 #include "sigvec.h"
 
 /* Generic multiply and accumulate complex-real */
-inline void mac_real(cmplx *x, cmplx *h, cmplx *y)
+inline void mac_real(float complex *x, float complex *h, float complex *y)
 {
-	y->real += x->real * h->real;
-	y->imag += x->imag * h->real;
+	*y = *x * creal(*h);
 }
 
 /* Generic multiply and accumulate complex-complex */
-inline void mac_cmplx(cmplx *x, cmplx *h, cmplx *y)
+inline void mac_cmplx(float complex *x, float complex *h, float complex *y)
 {
-	y->real += x->real * h->real - x->imag * h->imag;
-	y->imag += x->real * h->imag + x->imag * h->real;
+	*y = *x * *h;
 }
 
 /* Generic vector complex-real multiply and accumulate */
-inline void mac_real_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
+inline void mac_real_vec_n(float complex *x, float complex *h,
+			   float complex *y, int len)
 {
 	int i;
 
@@ -50,7 +49,8 @@ inline void mac_real_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
 }
 
 /* Generic vector complex-complex multiply and accumulate */
-inline void mac_cmplx_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
+inline void mac_cmplx_vec_n(float complex *x, float complex *h,
+			    float complex *y, int len)
 {
 	int i;
 
@@ -59,7 +59,7 @@ inline void mac_cmplx_vec_n(cmplx *x, cmplx *h, cmplx *y, int len)
 	}
 }
 
-int cxvec_convolve(struct cxvec *a_vec, struct cxvec *h_vec, struct cxvec *c_vec);
-int single_convolve(cmplx *in, struct cxvec *h_vec, cmplx *out);
+int cxvec_convolve(struct cxvec *in, struct cxvec *h, struct cxvec *out);
+int single_convolve(float complex *in, struct cxvec *h, float complex *out);
 
 #endif /* _CONVOLVE_H_ */

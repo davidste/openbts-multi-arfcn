@@ -34,14 +34,14 @@
 #endif
 
 /* Generic non-optimized complex-real convolution */
-static void conv_real_generic(cmplx *x,
-			      cmplx *h,
-			      cmplx *y,
+static void conv_real_generic(float complex *x,
+			      float complex *h,
+			      float complex *y,
 			      int h_len, int len)
 {
 	int i;
 
-	memset(y, 0, len * sizeof(cmplx));
+	memset(y, 0, len * sizeof(float complex));
 
 	for (i = 0; i < len; i++) {
 		mac_real_vec_n(&x[i], h, &y[i], h_len);
@@ -370,7 +370,7 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
 		   struct cxvec *restrict out_vec)
 {
 	int i;
-	cmplx *x, *h, *y;
+	float complex *x, *h, *y;
 	void (*conv_func)(float *, float *, float *, int);
 
 	if (in_vec->len < out_vec->len) { 
@@ -434,9 +434,9 @@ int cxvec_convolve(struct cxvec *restrict in_vec,
  * Modified single output convole with filter length dependent SSE
  * optimization. See generic convole call for additional information.
  */
-int single_convolve(cmplx *restrict in,
+int single_convolve(float complex *restrict in,
 		    struct cxvec *restrict h_vec,
-		    cmplx *restrict out)
+		    float complex *restrict out)
 {
 	void (*conv_func)(float *, float *, float *, int);
 

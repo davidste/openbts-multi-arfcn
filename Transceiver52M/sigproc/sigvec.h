@@ -25,6 +25,8 @@
 #ifndef _SIGVEC_H_
 #define _SIGVEC_H_
 
+#include <complex.h>
+
 #define CXVEC_FLG_REAL_ONLY	(1 << 0)
 #define CXVEC_FLG_MEM_ALIGN	(1 << 1)
 #define CXVEC_FLG_FFT_ALIGN	(1 << 2)
@@ -32,19 +34,14 @@
 
 #define M_PIf			(3.14159265358979323846264338327f)
 
-typedef struct cmplx {
-	float real;
-	float imag;
-} cmplx;
-
 struct cxvec {
 	int len;
 	int buf_len;
 	int flags;
 	int start_idx;
-	cmplx *buf;
-	cmplx *data;
-	cmplx _buf[0];
+	float complex *buf;
+	float complex *data;
+	float complex _buf[0];
 };
 
 enum cxvec_conv_type {
@@ -54,7 +51,7 @@ enum cxvec_conv_type {
 };
 
 /* Complex vectors */
-struct cxvec *cxvec_alloc(int len, int start, cmplx *buf, int flags);
+struct cxvec *cxvec_alloc(int len, int start, float complex *buf, int flags);
 struct cxvec *cxvec_subvec(struct cxvec *vec, int head, int start, int end);
 void cxvec_free(struct cxvec *vec);
 void cxvec_reset(struct cxvec *vec);

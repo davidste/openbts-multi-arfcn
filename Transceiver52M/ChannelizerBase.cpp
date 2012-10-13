@@ -92,8 +92,7 @@ bool ChannelizerBase::initFilters()
 	 */
 	for (i = 0; i < mFiltLen; i++) {
 		for (n = 0; n < m; n++) {
-			subFilters[n]->data[i].real = proto[i * m + n] * scale;
-			subFilters[n]->data[i].imag = 0.0f;
+			subFilters[n]->data[i] = proto[i * m + n] * scale;
 		}
 	}
 
