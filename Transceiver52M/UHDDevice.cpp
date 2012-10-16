@@ -44,6 +44,8 @@
 const double master_clk_rt = 52e6;
 const size_t smpl_buf_sz = (1 << 20);
 
+static TIMESTAMP init_rd_ts = 0;
+
 /** Timestamp conversion
     @param timestamp a UHD or OpenBTS timestamp
     @param rate sample rate
@@ -155,8 +157,8 @@ public:
 	bool setTxFreq(double wFreq);
 	bool setRxFreq(double wFreq);
 
-	inline TIMESTAMP initialWriteTimestamp() { return 0; }
-	inline TIMESTAMP initialReadTimestamp() { return 0; }
+	inline TIMESTAMP initialWriteTimestamp() { return init_rd_ts; }
+	inline TIMESTAMP initialReadTimestamp() { return init_rd_ts; }
 
 	inline double fullScaleInputValue() { return 1.0f * tx_ampl; }
 	inline double fullScaleOutputValue() { return 9450.0f; }
@@ -513,6 +515,17 @@ void uhd_device::restart(uhd::time_spec_t ts)
 	cmd = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
 	cmd.stream_now = true;
 	usrp_dev->issue_stream_cmd(cmd);
+
+	uhd::rx_metadata_t md;
+	uint32_t buff[rx_spp];
+
+	usrp_dev->get_device()->recv(buff,
+				     rx_spp,
+				     md,
+				     uhd::io_type_t::COMPLEX_INT16,
+				     uhd::device::RECV_MODE_ONE_PACKET);
+
+	init_rd_ts = convert_time(md.time_spec, actual_smpl_rt);
 }
 
 bool uhd_device::start()

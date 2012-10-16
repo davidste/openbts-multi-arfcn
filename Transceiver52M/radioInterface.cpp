@@ -147,8 +147,6 @@ bool RadioInterface::start()
   mAlignRadioServiceLoopThread = new Thread(32768);
   mAlignRadioServiceLoopThread->start((void * (*)(void*))AlignRadioServiceLoopAdapter,
                                       (void*)this);
-  writeTimestamp = mRadio->initialWriteTimestamp();
-  readTimestamp = mRadio->initialReadTimestamp();
   for (i = 0; i < mChanM; i++) {
     sendBuffer[i] = new float[8*2*INCHUNK];
     rcvBuffer[i] = new float[8*2*OUTCHUNK];
@@ -158,6 +156,9 @@ bool RadioInterface::start()
   init();
 
   mRadio->start(); 
+  writeTimestamp = mRadio->initialWriteTimestamp();
+  readTimestamp = mRadio->initialReadTimestamp();
+
   LOG(DEBUG) << "Radio started";
   mRadio->updateAlignment(writeTimestamp-10000); 
   mRadio->updateAlignment(writeTimestamp-10000);
