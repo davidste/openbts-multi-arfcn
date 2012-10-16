@@ -41,7 +41,7 @@
 
     smpl_buf_sz       - The receive sample buffer size in bytes.
 */
-const double master_clk_rt = 52e6;
+const double master_clk_rt = 13e6;
 const size_t smpl_buf_sz = (1 << 20);
 
 static TIMESTAMP init_rd_ts = 0;
