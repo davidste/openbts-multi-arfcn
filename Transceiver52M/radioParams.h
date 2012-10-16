@@ -39,8 +39,8 @@
 #define GSM_RESAMP_FILT_LEN	CHAN_FILT_LEN
 
 /* Device resampler settings */
-#define DEV_RESAMP_INRATE	(24)
-#define DEV_RESAMP_OUTRATE	(25)
+#define DEV_RESAMP_INRATE	(65)
+#define DEV_RESAMP_OUTRATE	(64)
 #define DEV_RESAMP_FILT_LEN	16
 
 /* Rate change block size matching */
@@ -48,7 +48,7 @@
 #define CHAN_INCHUNK		(GSM_RESAMP_INRATE * CHAN_MULT)
 #define CHAN_OUTCHUNK		(GSM_RESAMP_OUTRATE * CHAN_MULT)
 
-#define RESAMP_MULT		(8 * 4)
+#define RESAMP_MULT		(3 * 4)
 #define RESAMP_INCHUNK		(DEV_RESAMP_INRATE * RESAMP_MULT)
 #define RESAMP_OUTCHUNK		(DEV_RESAMP_OUTRATE * RESAMP_MULT)
 
