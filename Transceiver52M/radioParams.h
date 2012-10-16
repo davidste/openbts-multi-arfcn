@@ -31,7 +31,7 @@
 /* Channelizer settings */
 #define CHAN_MAX		10
 #define CHAN_RATE		400e3
-#define CHAN_FILT_LEN		16
+#define CHAN_FILT_LEN		12
 
 /* GSM resampler settings */
 #define GSM_RESAMP_INRATE	(65 * SAMPSPERSYM)
@@ -41,7 +41,7 @@
 /* Device resampler settings */
 #define DEV_RESAMP_INRATE	(65)
 #define DEV_RESAMP_OUTRATE	(64)
-#define DEV_RESAMP_FILT_LEN	16
+#define DEV_RESAMP_FILT_LEN	12
 
 /* Rate change block size matching */
 #define CHAN_MULT		(2 * 4)
