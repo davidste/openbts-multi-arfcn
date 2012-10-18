@@ -32,6 +32,7 @@
 bool Resampler::initFilters()
 {
 	int i, n;
+	int cutoff;
 	int protoLen = mP * mFiltLen;
 
 	float *proto;
@@ -67,8 +68,13 @@ bool Resampler::initFilters()
 	float a2 = 0.14128;
 	float a3 = 0.01168;
 
+	if (mP > mQ)
+		cutoff = mP;
+	else
+		cutoff = mQ;
+
 	for (i = 0; i < protoLen; i++) {
-		proto[i] = cxvec_sinc(((float) i - midpt) / mP);
+		proto[i] = cxvec_sinc(((float) i - midpt) / cutoff);
 		proto[i] *= a0 -
 			    a1 * cos(2 * M_PI * i / (protoLen - 1)) +
 			    a2 * cos(4 * M_PI * i / (protoLen - 1)) -
