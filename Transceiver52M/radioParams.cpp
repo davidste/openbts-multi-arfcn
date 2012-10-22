@@ -112,3 +112,28 @@ double getRadioOffset(int numChans, double rate, int sps,
 
 	return 0.0f;
 }
+
+int getChanPaths(int num)
+{
+	switch (num) {
+	case 1:
+		return 3;
+	case 2:
+	case 3:
+		return 4;
+	case 4:
+	case 5:
+		return 6;
+	case 6:
+	case 7:
+		return 10;
+	case 8:
+	case 9:
+		return 12;
+	case 10:
+	case 11:
+		return 15;
+	default:
+		return -1;
+	}
+}

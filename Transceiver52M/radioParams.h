@@ -29,7 +29,7 @@
 #define GSM_RATE		(1625e3 / 6)
 
 /* Channelizer settings */
-#define CHAN_MAX		10
+#define CHAN_MAX		16
 #define CHAN_RATE		400e3
 #define CHAN_FILT_LEN		16
 
@@ -64,5 +64,7 @@ double getRadioOffset(int chanM,
 		      int sps = SAMPSPERSYM,
 		      int resampFiltLen = GSM_RESAMP_FILT_LEN,
 		      int chanFiltLen = CHAN_FILT_LEN);
+
+int getChanPaths(int num);
 
 #endif /* RADIOPARAMS_H */

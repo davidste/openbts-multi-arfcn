@@ -128,16 +128,10 @@ int main(int argc, char *argv[])
 	 * number of ARFCN's must be less than the number of channels in the
 	 * channelizer.
 	 */
-	switch (numARFCN) {
-	case 1:
-		chanM = 1;
-		break;
-	case 2:
-	case 3:
-		chanM = 5;
-		break;
-	default:
-		chanM = 10;
+	chanM = getChanPaths(numARFCN);
+	if (chanM < 0) {
+		LOG(ERR) << "Invalid channel combination";
+		exit(-1);
 	}
 	genChanMap(numARFCN, chanM, chanMap);
 
