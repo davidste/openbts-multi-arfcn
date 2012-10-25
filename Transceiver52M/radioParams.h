@@ -62,7 +62,7 @@
 double getRadioOffset(int chanM,
 		      double chanRate = CHAN_RATE,
 		      int sps = SAMPSPERSYM,
-		      int resampFiltLen = GSM_RESAMP_FILT_LEN,
+		      int resampFiltLen = DEV_RESAMP_FILT_LEN,
 		      int chanFiltLen = CHAN_FILT_LEN);
 
 #endif /* RADIOPARAMS_H */
