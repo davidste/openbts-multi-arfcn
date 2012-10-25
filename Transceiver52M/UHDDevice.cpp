@@ -345,6 +345,10 @@ double uhd_device::set_rates(double rate)
 	usrp_dev->set_rx_rate(rate);
 	actual_rt = usrp_dev->get_tx_rate();
 
+	// Set filter bandwdith
+	usrp_dev->set_tx_bandwidth(rate, 0);
+	usrp_dev->set_rx_bandwidth(rate, 0);
+
 	if (actual_rt != rate) {
 		LOG(ALERT) << "Actual sample rate differs from desired rate";
 		LOG(ALERT) << actual_rt << "Hz";
