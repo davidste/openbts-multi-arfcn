@@ -65,4 +65,6 @@ double getRadioOffset(int chanM,
 		      int resampFiltLen = DEV_RESAMP_FILT_LEN,
 		      int chanFiltLen = CHAN_FILT_LEN);
 
+int getChanPaths(int num);
+
 #endif /* RADIOPARAMS_H */
